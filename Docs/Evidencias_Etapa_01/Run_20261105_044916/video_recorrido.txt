@@ -1,0 +1,10 @@
+Video de evidencia de desarrollo: video_recorrido.avi
+Formato: AVI 1.0 / Motion JPEG (MJPG), 960 x 799, 4 fps.
+Frames originales: 139; frames del video: 140.
+Duración: 35.000 s.
+Primer frame: t=2.001 s desde el inicio del run.
+Cadencia: remuestreo de los timestamps reales de resultados.json; se repite el último frame disponible durante los intervalos entre capturas.
+Relación de aspecto original conservada; ancho máximo configurado por PowerShell.
+Sin audio: la captura de frames de Game View no grabó una pista sonora.
+Estado funcional de origen: functional_checks_passed_visual_review_pending.
+La revisión visual y la validación de entrega Android se documentan por separado.

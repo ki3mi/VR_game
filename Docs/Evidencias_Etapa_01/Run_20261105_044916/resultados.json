@@ -1,0 +1,642 @@
+{
+  "timestampUtc": "2026-11-05T04:49:22.2509211Z",
+  "scene": "Assets/Scenes/DataCenter_VR.unity",
+  "unityVersion": "6000.6.0f1",
+  "simulatorType": "UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator",
+  "inputMethod": "InputSystem.QueueStateEvent para teclado y ratón; tracking del XR Interaction Simulator; selección por mirada con Space",
+  "state": "passed",
+  "visualReviewRequired": false,
+  "teleports": 16,
+  "visited": 6,
+  "inspected": 5,
+  "ambiencePlaying": true,
+  "animatedRacks": 4,
+  "ledsPerRack": 10,
+  "overflowingInspectionTexts": 0,
+  "tests": [
+    {
+      "id": "E1-P01",
+      "description": "Inicio y orientación con el simulador",
+      "passed": true,
+      "observed": "XRSimulatedHMD presente; giro rastreado por entrada RightArrow: 111.60°; altura de cámara: 1.65 m."
+    },
+    {
+      "id": "E1-P02",
+      "description": "Portal, seis destinos y regreso",
+      "passed": true,
+      "observed": "Portal usado; 6/6 destinos alcanzados por selección con Space; regreso a TP_Entrada."
+    },
+    {
+      "id": "E1-P03",
+      "description": "Recorrido mediante teletransporte",
+      "passed": true,
+      "observed": "Prueba W sin desplazamiento continuo: True; teletransportes acumulados: 9."
+    },
+    {
+      "id": "E1-P04",
+      "description": "Inventario del centro de datos",
+      "passed": true,
+      "observed": "Rack_01: presente, Rack_02: presente, Rack_03: presente, Rack_04: presente, Terminal_SWIFT: presente, Switch_Barato: presente, Impresora: presente; audio ambiental reproduciéndose: True; racks animados: 4; mínimo LEDs/rack: 10."
+    },
+    {
+      "id": "E1-P05",
+      "description": "Cinco objetos seleccionados con mirada",
+      "passed": true,
+      "observed": "Objetos: Rack_01, Terminal_SWIFT, Switch_Barato, Impresora, Panel_Controles; inspecciones únicas: 5."
+    },
+    {
+      "id": "E1-P06",
+      "description": "Apertura y cierre de fichas",
+      "passed": true,
+      "observed": "Las cinco fichas se abrieron y cerraron con Escape; textos TMP desbordados: 0. Capturas guardadas para revisión visual de legibilidad."
+    },
+    {
+      "id": "E1-P07",
+      "description": "Ejecución del recorrido sin errores",
+      "passed": true,
+      "observed": "Recorrido terminado: True; errores capturados en Play Mode: 0. Consola del Editor se revisa además por MCP después de salir."
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    "01_entrada.png",
+    "02_portal.png",
+    "TP_Entrada.png",
+    "TP_Racks.png",
+    "TP_Terminal.png",
+    "TP_Switch.png",
+    "TP_Impresora.png",
+    "TP_Controles.png",
+    "inspeccion_Rack_01.png",
+    "inspeccion_Terminal_SWIFT.png",
+    "inspeccion_Switch_Barato.png",
+    "inspeccion_Impresora.png",
+    "inspeccion_Panel_Controles.png",
+    "04_interior.png",
+    "03_regreso.png"
+  ],
+  "frames": [
+    {
+      "file": "frames/frame_00000.png",
+      "elapsedSeconds": 2.0007392999996227
+    },
+    {
+      "file": "frames/frame_00001.png",
+      "elapsedSeconds": 2.2522637999995823
+    },
+    {
+      "file": "frames/frame_00002.png",
+      "elapsedSeconds": 2.503775499999847
+    },
+    {
+      "file": "frames/frame_00003.png",
+      "elapsedSeconds": 2.7538939999999457
+    },
+    {
+      "file": "frames/frame_00004.png",
+      "elapsedSeconds": 3.004983899999843
+    },
+    {
+      "file": "frames/frame_00005.png",
+      "elapsedSeconds": 3.2554692999997314
+    },
+    {
+      "file": "frames/frame_00006.png",
+      "elapsedSeconds": 3.5088551999997435
+    },
+    {
+      "file": "frames/frame_00007.png",
+      "elapsedSeconds": 3.7598205999997845
+    },
+    {
+      "file": "frames/frame_00008.png",
+      "elapsedSeconds": 4.011565499999961
+    },
+    {
+      "file": "frames/frame_00009.png",
+      "elapsedSeconds": 4.2627440999999635
+    },
+    {
+      "file": "frames/frame_00010.png",
+      "elapsedSeconds": 4.51306059999979
+    },
+    {
+      "file": "frames/frame_00011.png",
+      "elapsedSeconds": 4.763070599999992
+    },
+    {
+      "file": "frames/frame_00012.png",
+      "elapsedSeconds": 5.014878099999805
+    },
+    {
+      "file": "frames/frame_00013.png",
+      "elapsedSeconds": 5.2659239999998135
+    },
+    {
+      "file": "frames/frame_00014.png",
+      "elapsedSeconds": 5.51690359999975
+    },
+    {
+      "file": "frames/frame_00015.png",
+      "elapsedSeconds": 5.769192199999907
+    },
+    {
+      "file": "frames/frame_00016.png",
+      "elapsedSeconds": 6.019706599999608
+    },
+    {
+      "file": "frames/frame_00017.png",
+      "elapsedSeconds": 6.269767299999785
+    },
+    {
+      "file": "frames/frame_00018.png",
+      "elapsedSeconds": 6.5225251999995635
+    },
+    {
+      "file": "frames/frame_00019.png",
+      "elapsedSeconds": 6.773556799999824
+    },
+    {
+      "file": "frames/frame_00020.png",
+      "elapsedSeconds": 7.024785099999917
+    },
+    {
+      "file": "frames/frame_00021.png",
+      "elapsedSeconds": 7.276151599999594
+    },
+    {
+      "file": "frames/frame_00022.png",
+      "elapsedSeconds": 7.527991099999781
+    },
+    {
+      "file": "frames/frame_00023.png",
+      "elapsedSeconds": 7.778076299999611
+    },
+    {
+      "file": "frames/frame_00024.png",
+      "elapsedSeconds": 8.029415999999856
+    },
+    {
+      "file": "frames/frame_00025.png",
+      "elapsedSeconds": 8.280076699999881
+    },
+    {
+      "file": "frames/frame_00026.png",
+      "elapsedSeconds": 8.531594799999766
+    },
+    {
+      "file": "frames/frame_00027.png",
+      "elapsedSeconds": 8.78220549999969
+    },
+    {
+      "file": "frames/frame_00028.png",
+      "elapsedSeconds": 9.033017699999618
+    },
+    {
+      "file": "frames/frame_00029.png",
+      "elapsedSeconds": 9.28303029999961
+    },
+    {
+      "file": "frames/frame_00030.png",
+      "elapsedSeconds": 9.534114699999918
+    },
+    {
+      "file": "frames/frame_00031.png",
+      "elapsedSeconds": 9.785573499999828
+    },
+    {
+      "file": "frames/frame_00032.png",
+      "elapsedSeconds": 10.03703299999961
+    },
+    {
+      "file": "frames/frame_00033.png",
+      "elapsedSeconds": 10.287676699999793
+    },
+    {
+      "file": "frames/frame_00034.png",
+      "elapsedSeconds": 10.538753699999688
+    },
+    {
+      "file": "frames/frame_00035.png",
+      "elapsedSeconds": 10.789512999999715
+    },
+    {
+      "file": "frames/frame_00036.png",
+      "elapsedSeconds": 11.04005769999958
+    },
+    {
+      "file": "frames/frame_00037.png",
+      "elapsedSeconds": 11.290501799999674
+    },
+    {
+      "file": "frames/frame_00038.png",
+      "elapsedSeconds": 11.541074099999605
+    },
+    {
+      "file": "frames/frame_00039.png",
+      "elapsedSeconds": 11.791270299999724
+    },
+    {
+      "file": "frames/frame_00040.png",
+      "elapsedSeconds": 12.041627499999777
+    },
+    {
+      "file": "frames/frame_00041.png",
+      "elapsedSeconds": 12.292037399999572
+    },
+    {
+      "file": "frames/frame_00042.png",
+      "elapsedSeconds": 12.542435899999873
+    },
+    {
+      "file": "frames/frame_00043.png",
+      "elapsedSeconds": 12.79328889999988
+    },
+    {
+      "file": "frames/frame_00044.png",
+      "elapsedSeconds": 13.043475399999807
+    },
+    {
+      "file": "frames/frame_00045.png",
+      "elapsedSeconds": 13.29351859999997
+    },
+    {
+      "file": "frames/frame_00046.png",
+      "elapsedSeconds": 13.544625599999563
+    },
+    {
+      "file": "frames/frame_00047.png",
+      "elapsedSeconds": 13.796323699999903
+    },
+    {
+      "file": "frames/frame_00048.png",
+      "elapsedSeconds": 14.046891499999674
+    },
+    {
+      "file": "frames/frame_00049.png",
+      "elapsedSeconds": 14.298262599999816
+    },
+    {
+      "file": "frames/frame_00050.png",
+      "elapsedSeconds": 14.54920329999959
+    },
+    {
+      "file": "frames/frame_00051.png",
+      "elapsedSeconds": 14.80055349999975
+    },
+    {
+      "file": "frames/frame_00052.png",
+      "elapsedSeconds": 15.050648899999942
+    },
+    {
+      "file": "frames/frame_00053.png",
+      "elapsedSeconds": 15.301042299999608
+    },
+    {
+      "file": "frames/frame_00054.png",
+      "elapsedSeconds": 15.552966799999922
+    },
+    {
+      "file": "frames/frame_00055.png",
+      "elapsedSeconds": 15.803400399999646
+    },
+    {
+      "file": "frames/frame_00056.png",
+      "elapsedSeconds": 16.054045999999744
+    },
+    {
+      "file": "frames/frame_00057.png",
+      "elapsedSeconds": 16.304970499999854
+    },
+    {
+      "file": "frames/frame_00058.png",
+      "elapsedSeconds": 16.555264699999952
+    },
+    {
+      "file": "frames/frame_00059.png",
+      "elapsedSeconds": 16.805972799999836
+    },
+    {
+      "file": "frames/frame_00060.png",
+      "elapsedSeconds": 17.05630579999979
+    },
+    {
+      "file": "frames/frame_00061.png",
+      "elapsedSeconds": 17.307538799999747
+    },
+    {
+      "file": "frames/frame_00062.png",
+      "elapsedSeconds": 17.559248899999602
+    },
+    {
+      "file": "frames/frame_00063.png",
+      "elapsedSeconds": 17.810580099999697
+    },
+    {
+      "file": "frames/frame_00064.png",
+      "elapsedSeconds": 18.06095749999986
+    },
+    {
+      "file": "frames/frame_00065.png",
+      "elapsedSeconds": 18.311679899999945
+    },
+    {
+      "file": "frames/frame_00066.png",
+      "elapsedSeconds": 18.562284399999953
+    },
+    {
+      "file": "frames/frame_00067.png",
+      "elapsedSeconds": 18.81244579999975
+    },
+    {
+      "file": "frames/frame_00068.png",
+      "elapsedSeconds": 19.06399059999967
+    },
+    {
+      "file": "frames/frame_00069.png",
+      "elapsedSeconds": 19.314503499999773
+    },
+    {
+      "file": "frames/frame_00070.png",
+      "elapsedSeconds": 19.56454719999965
+    },
+    {
+      "file": "frames/frame_00071.png",
+      "elapsedSeconds": 19.81594899999982
+    },
+    {
+      "file": "frames/frame_00072.png",
+      "elapsedSeconds": 20.06631779999998
+    },
+    {
+      "file": "frames/frame_00073.png",
+      "elapsedSeconds": 20.31676759999982
+    },
+    {
+      "file": "frames/frame_00074.png",
+      "elapsedSeconds": 20.5681783
+    },
+    {
+      "file": "frames/frame_00075.png",
+      "elapsedSeconds": 20.819316599999638
+    },
+    {
+      "file": "frames/frame_00076.png",
+      "elapsedSeconds": 21.06949379999969
+    },
+    {
+      "file": "frames/frame_00077.png",
+      "elapsedSeconds": 21.319874399999662
+    },
+    {
+      "file": "frames/frame_00078.png",
+      "elapsedSeconds": 21.571149799999603
+    },
+    {
+      "file": "frames/frame_00079.png",
+      "elapsedSeconds": 21.822001599999567
+    },
+    {
+      "file": "frames/frame_00080.png",
+      "elapsedSeconds": 22.072561099999803
+    },
+    {
+      "file": "frames/frame_00081.png",
+      "elapsedSeconds": 22.32340669999985
+    },
+    {
+      "file": "frames/frame_00082.png",
+      "elapsedSeconds": 22.574721199999658
+    },
+    {
+      "file": "frames/frame_00083.png",
+      "elapsedSeconds": 22.825312999999824
+    },
+    {
+      "file": "frames/frame_00084.png",
+      "elapsedSeconds": 23.076678299999912
+    },
+    {
+      "file": "frames/frame_00085.png",
+      "elapsedSeconds": 23.32704079999985
+    },
+    {
+      "file": "frames/frame_00086.png",
+      "elapsedSeconds": 23.57787879999978
+    },
+    {
+      "file": "frames/frame_00087.png",
+      "elapsedSeconds": 23.828448099999605
+    },
+    {
+      "file": "frames/frame_00088.png",
+      "elapsedSeconds": 24.080366099999992
+    },
+    {
+      "file": "frames/frame_00089.png",
+      "elapsedSeconds": 24.33042669999986
+    },
+    {
+      "file": "frames/frame_00090.png",
+      "elapsedSeconds": 24.580467099999623
+    },
+    {
+      "file": "frames/frame_00091.png",
+      "elapsedSeconds": 24.83071999999993
+    },
+    {
+      "file": "frames/frame_00092.png",
+      "elapsedSeconds": 25.0821633999999
+    },
+    {
+      "file": "frames/frame_00093.png",
+      "elapsedSeconds": 25.33303049999995
+    },
+    {
+      "file": "frames/frame_00094.png",
+      "elapsedSeconds": 25.583324999999604
+    },
+    {
+      "file": "frames/frame_00095.png",
+      "elapsedSeconds": 25.833787699999903
+    },
+    {
+      "file": "frames/frame_00096.png",
+      "elapsedSeconds": 26.08521639999981
+    },
+    {
+      "file": "frames/frame_00097.png",
+      "elapsedSeconds": 26.336183099999744
+    },
+    {
+      "file": "frames/frame_00098.png",
+      "elapsedSeconds": 26.58724839999968
+    },
+    {
+      "file": "frames/frame_00099.png",
+      "elapsedSeconds": 26.838021899999603
+    },
+    {
+      "file": "frames/frame_00100.png",
+      "elapsedSeconds": 27.088542499999676
+    },
+    {
+      "file": "frames/frame_00101.png",
+      "elapsedSeconds": 27.339278999999806
+    },
+    {
+      "file": "frames/frame_00102.png",
+      "elapsedSeconds": 27.590447099999892
+    },
+    {
+      "file": "frames/frame_00103.png",
+      "elapsedSeconds": 27.84092329999976
+    },
+    {
+      "file": "frames/frame_00104.png",
+      "elapsedSeconds": 28.09096479999971
+    },
+    {
+      "file": "frames/frame_00105.png",
+      "elapsedSeconds": 28.341764099999637
+    },
+    {
+      "file": "frames/frame_00106.png",
+      "elapsedSeconds": 28.59291129999974
+    },
+    {
+      "file": "frames/frame_00107.png",
+      "elapsedSeconds": 28.84503689999974
+    },
+    {
+      "file": "frames/frame_00108.png",
+      "elapsedSeconds": 29.095051199999943
+    },
+    {
+      "file": "frames/frame_00109.png",
+      "elapsedSeconds": 29.345216399999572
+    },
+    {
+      "file": "frames/frame_00110.png",
+      "elapsedSeconds": 29.595664799999668
+    },
+    {
+      "file": "frames/frame_00111.png",
+      "elapsedSeconds": 29.845747299999857
+    },
+    {
+      "file": "frames/frame_00112.png",
+      "elapsedSeconds": 30.09623079999983
+    },
+    {
+      "file": "frames/frame_00113.png",
+      "elapsedSeconds": 30.347622599999795
+    },
+    {
+      "file": "frames/frame_00114.png",
+      "elapsedSeconds": 30.598964099999648
+    },
+    {
+      "file": "frames/frame_00115.png",
+      "elapsedSeconds": 30.849424299999555
+    },
+    {
+      "file": "frames/frame_00116.png",
+      "elapsedSeconds": 31.100742299999638
+    },
+    {
+      "file": "frames/frame_00117.png",
+      "elapsedSeconds": 31.351452699999754
+    },
+    {
+      "file": "frames/frame_00118.png",
+      "elapsedSeconds": 31.602002199999788
+    },
+    {
+      "file": "frames/frame_00119.png",
+      "elapsedSeconds": 31.85289509999984
+    },
+    {
+      "file": "frames/frame_00120.png",
+      "elapsedSeconds": 32.10445189999973
+    },
+    {
+      "file": "frames/frame_00121.png",
+      "elapsedSeconds": 32.35511889999998
+    },
+    {
+      "file": "frames/frame_00122.png",
+      "elapsedSeconds": 32.6070279999999
+    },
+    {
+      "file": "frames/frame_00123.png",
+      "elapsedSeconds": 32.85791469999958
+    },
+    {
+      "file": "frames/frame_00124.png",
+      "elapsedSeconds": 33.109515499999816
+    },
+    {
+      "file": "frames/frame_00125.png",
+      "elapsedSeconds": 33.360331999999744
+    },
+    {
+      "file": "frames/frame_00126.png",
+      "elapsedSeconds": 33.611844299999575
+    },
+    {
+      "file": "frames/frame_00127.png",
+      "elapsedSeconds": 33.861870799999906
+    },
+    {
+      "file": "frames/frame_00128.png",
+      "elapsedSeconds": 34.11306579999973
+    },
+    {
+      "file": "frames/frame_00129.png",
+      "elapsedSeconds": 34.36419869999963
+    },
+    {
+      "file": "frames/frame_00130.png",
+      "elapsedSeconds": 34.61517359999971
+    },
+    {
+      "file": "frames/frame_00131.png",
+      "elapsedSeconds": 34.86646989999963
+    },
+    {
+      "file": "frames/frame_00132.png",
+      "elapsedSeconds": 35.116974899999605
+    },
+    {
+      "file": "frames/frame_00133.png",
+      "elapsedSeconds": 35.367596299999605
+    },
+    {
+      "file": "frames/frame_00134.png",
+      "elapsedSeconds": 35.61842579999984
+    },
+    {
+      "file": "frames/frame_00135.png",
+      "elapsedSeconds": 35.86944519999997
+    },
+    {
+      "file": "frames/frame_00136.png",
+      "elapsedSeconds": 36.121350699999766
+    },
+    {
+      "file": "frames/frame_00137.png",
+      "elapsedSeconds": 36.37225579999995
+    },
+    {
+      "file": "frames/frame_00138.png",
+      "elapsedSeconds": 36.62418949999983
+    }
+  ],
+  "visualReviewNotes": "Revisión visual de las cinco fichas y 04_interior.png: texto legible y completo, fondos opacos sin texto del mundo superpuesto, HUD y navegación visibles.",
+  "editorConsoleAfterStop": {
+    "errors": 0,
+    "warnings": 0,
+    "source": "Unity MCP read_console después de salir de Play Mode"
+  }
+}

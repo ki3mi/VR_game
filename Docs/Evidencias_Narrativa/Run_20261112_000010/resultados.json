@@ -1,0 +1,141 @@
+﻿{
+    "timestampUtc": "2026-11-12T00:00:16.5408523Z",
+    "scene": "Assets/Scenes/DataCenter_VR.unity",
+    "unityVersion": "6000.6.0f1",
+    "simulator": "UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator",
+    "status": "failed",
+    "configuredDurationSeconds": 90.0,
+    "elapsedSeconds": 79.9605712890625,
+    "durationAssetUnchanged": false,
+    "visualReviewRequired": false,
+    "checks": [
+        {
+            "id": "NAR-01",
+            "passed": true,
+            "observed": "Escena abre con la bienvenida del senior y simulador XR activo."
+        },
+        {
+            "id": "NAR-02",
+            "passed": true,
+            "observed": "Guíame muestra la explicación de la acción; Repetir restaura el mensaje y mantiene el objetivo."
+        },
+        {
+            "id": "NAR-03",
+            "passed": true,
+            "observed": "Una consulta incompleta muestra corrección y permite reintentar el objetivo."
+        },
+        {
+            "id": "NAR-04",
+            "passed": true,
+            "observed": "Consulta e interpretación de cuenta, origen y hora de acceso antes del envío."
+        },
+        {
+            "id": "NAR-05",
+            "passed": true,
+            "observed": "Hitos exactos 20:36 → 22:06/36 órdenes → 05/02 03:59, con pausas para leer."
+        },
+        {
+            "id": "NAR-06",
+            "passed": true,
+            "observed": "Tres evidencias registradas en un orden distinto al guion: impresora, switch y registro."
+        },
+        {
+            "id": "NAR-07",
+            "passed": true,
+            "observed": "El jugador aplica MFA, política de horario y SIEM desde la interfaz del panel."
+        },
+        {
+            "id": "NAR-08",
+            "passed": true,
+            "observed": "Bloqueo real antes de envíos: cero órdenes, alarma activa y evento protegido."
+        },
+        {
+            "id": "NAR-09",
+            "passed": true,
+            "observed": "Tres consultas completadas: acceso, pagos y evento centralizado protegido."
+        },
+        {
+            "id": "NAR-10",
+            "passed": true,
+            "observed": "Comparación final basada en ataque de 36 órdenes y defensa de cero órdenes realizados en esta sesión."
+        },
+        {
+            "id": "NAR-11",
+            "passed": true,
+            "observed": "Recorrido terminado después de explicaciones, investigación y práctica técnica, con cierre accesible."
+        },
+        {
+            "id": "REC-01",
+            "passed": true,
+            "observed": "Repetir la prueba protegida conserva expediente 3/3, consultas únicas 3/3 y comparación 36 frente a 0."
+        },
+        {
+            "id": "NAR-12",
+            "passed": true,
+            "observed": "Reinicio completo devuelve a bienvenida sin evidencias, controles, alarma, consultas ni historial previos."
+        },
+        {
+            "id": "REC-02",
+            "passed": true,
+            "observed": "La explicación completa del senior aparece en la propia consola al solicitar ayuda."
+        },
+        {
+            "id": "REC-03",
+            "passed": true,
+            "observed": "El campo recibe foco y teclear W no mueve la cámara ni activa locomoción del simulador."
+        },
+        {
+            "id": "REC-04",
+            "passed": true,
+            "observed": "Cerrar antes de ejecutar conserva la tarea y ofrece Reabrir consulta; cerrar tras ejecutar conserva su interpretación y permite seguir."
+        },
+        {
+            "id": "REC-05",
+            "passed": true,
+            "observed": "Reiniciar durante la transmisión cancela su corrutina; tras nueve segundos sigue la bienvenida limpia."
+        },
+        {
+            "id": "REC-06",
+            "passed": true,
+            "observed": "Llévame lleva a la estación; el jugador selecciona la terminal con la mirada para abrir la práctica."
+        }
+    ],
+    "stages": [
+        "Orientation",
+        "AccessQuery",
+        "AccessReview",
+        "PaymentQuery",
+        "PaymentReview",
+        "SessionEnd",
+        "Investigate",
+        "PrepareDefense",
+        "Mfa",
+        "Schedule",
+        "Siem",
+        "DefenseReady",
+        "DefenseResult",
+        "ProtectedQuery",
+        "ProtectedReview",
+        "Comparison",
+        "Debrief",
+        "Completed",
+        "Welcome",
+        "Transmission"
+    ],
+    "screenshots": [
+        "01_bienvenida.png",
+        "02_consulta_accesos.png",
+        "03_ordenes_enviadas.png",
+        "04_evidencias_completas.png",
+        "05_defensas_preparadas.png",
+        "06_intento_bloqueado.png",
+        "07_comparacion_36_0.png",
+        "08_conclusiones.png",
+        "09_entrenamiento_completado.png",
+        "10_defensa_repetida.png",
+        "11_guia_dentro_de_consola.png"
+    ],
+    "errors": [
+        "System.InvalidOperationException: La prueba de reinicio debe comenzar con el campo enfocado.\r\n  at AndesSim.Editor.NarrativeValidation+<Validate>d__25.MoveNext () [0x01e3f] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:381 \r\n  at AndesSim.Editor.NarrativeValidation.Tick () [0x0006b] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:134 "
+    ]
+}

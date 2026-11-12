@@ -1,0 +1,636 @@
+﻿{
+    "timestampUtc": "2026-11-05T04:47:25.0261389Z",
+    "scene": "Assets/Scenes/DataCenter_VR.unity",
+    "unityVersion": "6000.6.0f1",
+    "simulatorType": "UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator",
+    "inputMethod": "InputSystem.QueueStateEvent para teclado y ratón; tracking del XR Interaction Simulator; selección por mirada con Space",
+    "state": "functional_checks_passed_visual_review_pending",
+    "visualReviewRequired": true,
+    "teleports": 16,
+    "visited": 6,
+    "inspected": 5,
+    "ambiencePlaying": true,
+    "animatedRacks": 4,
+    "ledsPerRack": 10,
+    "overflowingInspectionTexts": 0,
+    "tests": [
+        {
+            "id": "E1-P01",
+            "description": "Inicio y orientación con el simulador",
+            "passed": true,
+            "observed": "XRSimulatedHMD presente; giro rastreado por entrada RightArrow: 90.00°; altura de cámara: 1.65 m."
+        },
+        {
+            "id": "E1-P02",
+            "description": "Portal, seis destinos y regreso",
+            "passed": true,
+            "observed": "Portal usado; 6/6 destinos alcanzados por selección con Space; regreso a TP_Entrada."
+        },
+        {
+            "id": "E1-P03",
+            "description": "Recorrido mediante teletransporte",
+            "passed": true,
+            "observed": "Prueba W sin desplazamiento continuo: True; teletransportes acumulados: 9."
+        },
+        {
+            "id": "E1-P04",
+            "description": "Inventario del centro de datos",
+            "passed": true,
+            "observed": "Rack_01: presente, Rack_02: presente, Rack_03: presente, Rack_04: presente, Terminal_SWIFT: presente, Switch_Barato: presente, Impresora: presente; audio ambiental reproduciéndose: True; racks animados: 4; mínimo LEDs/rack: 10."
+        },
+        {
+            "id": "E1-P05",
+            "description": "Cinco objetos seleccionados con mirada",
+            "passed": true,
+            "observed": "Objetos: Rack_01, Terminal_SWIFT, Switch_Barato, Impresora, Panel_Controles; inspecciones únicas: 5."
+        },
+        {
+            "id": "E1-P06",
+            "description": "Apertura y cierre de fichas",
+            "passed": true,
+            "observed": "Las cinco fichas se abrieron y cerraron con Escape; textos TMP desbordados: 0. Capturas guardadas para revisión visual de legibilidad."
+        },
+        {
+            "id": "E1-P07",
+            "description": "Ejecución del recorrido sin errores",
+            "passed": true,
+            "observed": "Recorrido terminado: True; errores capturados en Play Mode: 0. Consola del Editor se revisa además por MCP después de salir."
+        }
+    ],
+    "errors": [],
+    "screenshots": [
+        "01_entrada.png",
+        "02_portal.png",
+        "TP_Entrada.png",
+        "TP_Racks.png",
+        "TP_Terminal.png",
+        "TP_Switch.png",
+        "TP_Impresora.png",
+        "TP_Controles.png",
+        "inspeccion_Rack_01.png",
+        "inspeccion_Terminal_SWIFT.png",
+        "inspeccion_Switch_Barato.png",
+        "inspeccion_Impresora.png",
+        "inspeccion_Panel_Controles.png",
+        "04_interior.png",
+        "03_regreso.png"
+    ],
+    "frames": [
+        {
+            "file": "frames/frame_00000.png",
+            "elapsedSeconds": 2.0014099999998507
+        },
+        {
+            "file": "frames/frame_00001.png",
+            "elapsedSeconds": 2.2521295999999893
+        },
+        {
+            "file": "frames/frame_00002.png",
+            "elapsedSeconds": 2.5023909000001368
+        },
+        {
+            "file": "frames/frame_00003.png",
+            "elapsedSeconds": 2.7545608999998876
+        },
+        {
+            "file": "frames/frame_00004.png",
+            "elapsedSeconds": 3.005198500000006
+        },
+        {
+            "file": "frames/frame_00005.png",
+            "elapsedSeconds": 3.2566312999997535
+        },
+        {
+            "file": "frames/frame_00006.png",
+            "elapsedSeconds": 3.5075348999998823
+        },
+        {
+            "file": "frames/frame_00007.png",
+            "elapsedSeconds": 3.7595949999999903
+        },
+        {
+            "file": "frames/frame_00008.png",
+            "elapsedSeconds": 4.00970580000012
+        },
+        {
+            "file": "frames/frame_00009.png",
+            "elapsedSeconds": 4.260451099999955
+        },
+        {
+            "file": "frames/frame_00010.png",
+            "elapsedSeconds": 4.511007900000095
+        },
+        {
+            "file": "frames/frame_00011.png",
+            "elapsedSeconds": 4.762918500000069
+        },
+        {
+            "file": "frames/frame_00012.png",
+            "elapsedSeconds": 5.014576300000044
+        },
+        {
+            "file": "frames/frame_00013.png",
+            "elapsedSeconds": 5.2660735999998
+        },
+        {
+            "file": "frames/frame_00014.png",
+            "elapsedSeconds": 5.517838899999788
+        },
+        {
+            "file": "frames/frame_00015.png",
+            "elapsedSeconds": 5.769344100000126
+        },
+        {
+            "file": "frames/frame_00016.png",
+            "elapsedSeconds": 6.020581299999776
+        },
+        {
+            "file": "frames/frame_00017.png",
+            "elapsedSeconds": 6.270915900000091
+        },
+        {
+            "file": "frames/frame_00018.png",
+            "elapsedSeconds": 6.522429199999806
+        },
+        {
+            "file": "frames/frame_00019.png",
+            "elapsedSeconds": 6.773975199999768
+        },
+        {
+            "file": "frames/frame_00020.png",
+            "elapsedSeconds": 7.023996200000056
+        },
+        {
+            "file": "frames/frame_00021.png",
+            "elapsedSeconds": 7.274736500000017
+        },
+        {
+            "file": "frames/frame_00022.png",
+            "elapsedSeconds": 7.525647500000105
+        },
+        {
+            "file": "frames/frame_00023.png",
+            "elapsedSeconds": 7.776271199999883
+        },
+        {
+            "file": "frames/frame_00024.png",
+            "elapsedSeconds": 8.026539299999968
+        },
+        {
+            "file": "frames/frame_00025.png",
+            "elapsedSeconds": 8.277097299999696
+        },
+        {
+            "file": "frames/frame_00026.png",
+            "elapsedSeconds": 8.527396899999985
+        },
+        {
+            "file": "frames/frame_00027.png",
+            "elapsedSeconds": 8.778735200000028
+        },
+        {
+            "file": "frames/frame_00028.png",
+            "elapsedSeconds": 9.02910410000004
+        },
+        {
+            "file": "frames/frame_00029.png",
+            "elapsedSeconds": 9.279567300000053
+        },
+        {
+            "file": "frames/frame_00030.png",
+            "elapsedSeconds": 9.53201029999991
+        },
+        {
+            "file": "frames/frame_00031.png",
+            "elapsedSeconds": 9.783381700000064
+        },
+        {
+            "file": "frames/frame_00032.png",
+            "elapsedSeconds": 10.03438099999994
+        },
+        {
+            "file": "frames/frame_00033.png",
+            "elapsedSeconds": 10.28530389999969
+        },
+        {
+            "file": "frames/frame_00034.png",
+            "elapsedSeconds": 10.536173200000121
+        },
+        {
+            "file": "frames/frame_00035.png",
+            "elapsedSeconds": 10.787039399999685
+        },
+        {
+            "file": "frames/frame_00036.png",
+            "elapsedSeconds": 11.037754999999834
+        },
+        {
+            "file": "frames/frame_00037.png",
+            "elapsedSeconds": 11.288745599999856
+        },
+        {
+            "file": "frames/frame_00038.png",
+            "elapsedSeconds": 11.54009619999988
+        },
+        {
+            "file": "frames/frame_00039.png",
+            "elapsedSeconds": 11.791603799999848
+        },
+        {
+            "file": "frames/frame_00040.png",
+            "elapsedSeconds": 12.043086299999686
+        },
+        {
+            "file": "frames/frame_00041.png",
+            "elapsedSeconds": 12.294335799999772
+        },
+        {
+            "file": "frames/frame_00042.png",
+            "elapsedSeconds": 12.546056299999691
+        },
+        {
+            "file": "frames/frame_00043.png",
+            "elapsedSeconds": 12.797653999999966
+        },
+        {
+            "file": "frames/frame_00044.png",
+            "elapsedSeconds": 13.048983099999987
+        },
+        {
+            "file": "frames/frame_00045.png",
+            "elapsedSeconds": 13.2995034999999
+        },
+        {
+            "file": "frames/frame_00046.png",
+            "elapsedSeconds": 13.550968999999895
+        },
+        {
+            "file": "frames/frame_00047.png",
+            "elapsedSeconds": 13.802154099999825
+        },
+        {
+            "file": "frames/frame_00048.png",
+            "elapsedSeconds": 14.052319800000078
+        },
+        {
+            "file": "frames/frame_00049.png",
+            "elapsedSeconds": 14.303404899999805
+        },
+        {
+            "file": "frames/frame_00050.png",
+            "elapsedSeconds": 14.555115699999988
+        },
+        {
+            "file": "frames/frame_00051.png",
+            "elapsedSeconds": 14.806013599999915
+        },
+        {
+            "file": "frames/frame_00052.png",
+            "elapsedSeconds": 15.057322099999965
+        },
+        {
+            "file": "frames/frame_00053.png",
+            "elapsedSeconds": 15.308396800000082
+        },
+        {
+            "file": "frames/frame_00054.png",
+            "elapsedSeconds": 15.560371699999905
+        },
+        {
+            "file": "frames/frame_00055.png",
+            "elapsedSeconds": 15.81150260000004
+        },
+        {
+            "file": "frames/frame_00056.png",
+            "elapsedSeconds": 16.06239349999987
+        },
+        {
+            "file": "frames/frame_00057.png",
+            "elapsedSeconds": 16.312597600000117
+        },
+        {
+            "file": "frames/frame_00058.png",
+            "elapsedSeconds": 16.564141199999995
+        },
+        {
+            "file": "frames/frame_00059.png",
+            "elapsedSeconds": 16.81545109999979
+        },
+        {
+            "file": "frames/frame_00060.png",
+            "elapsedSeconds": 17.06599069999993
+        },
+        {
+            "file": "frames/frame_00061.png",
+            "elapsedSeconds": 17.316139799999746
+        },
+        {
+            "file": "frames/frame_00062.png",
+            "elapsedSeconds": 17.56696069999998
+        },
+        {
+            "file": "frames/frame_00063.png",
+            "elapsedSeconds": 17.81705000000011
+        },
+        {
+            "file": "frames/frame_00064.png",
+            "elapsedSeconds": 18.067646500000137
+        },
+        {
+            "file": "frames/frame_00065.png",
+            "elapsedSeconds": 18.31836089999979
+        },
+        {
+            "file": "frames/frame_00066.png",
+            "elapsedSeconds": 18.568576699999994
+        },
+        {
+            "file": "frames/frame_00067.png",
+            "elapsedSeconds": 18.819141200000104
+        },
+        {
+            "file": "frames/frame_00068.png",
+            "elapsedSeconds": 19.070042699999703
+        },
+        {
+            "file": "frames/frame_00069.png",
+            "elapsedSeconds": 19.320661899999777
+        },
+        {
+            "file": "frames/frame_00070.png",
+            "elapsedSeconds": 19.571703799999796
+        },
+        {
+            "file": "frames/frame_00071.png",
+            "elapsedSeconds": 19.821872600000006
+        },
+        {
+            "file": "frames/frame_00072.png",
+            "elapsedSeconds": 20.07291260000011
+        },
+        {
+            "file": "frames/frame_00073.png",
+            "elapsedSeconds": 20.324095899999975
+        },
+        {
+            "file": "frames/frame_00074.png",
+            "elapsedSeconds": 20.575161799999933
+        },
+        {
+            "file": "frames/frame_00075.png",
+            "elapsedSeconds": 20.826493499999742
+        },
+        {
+            "file": "frames/frame_00076.png",
+            "elapsedSeconds": 21.0766193999998
+        },
+        {
+            "file": "frames/frame_00077.png",
+            "elapsedSeconds": 21.328216899999916
+        },
+        {
+            "file": "frames/frame_00078.png",
+            "elapsedSeconds": 21.57972689999997
+        },
+        {
+            "file": "frames/frame_00079.png",
+            "elapsedSeconds": 21.831221099999766
+        },
+        {
+            "file": "frames/frame_00080.png",
+            "elapsedSeconds": 22.083678899999995
+        },
+        {
+            "file": "frames/frame_00081.png",
+            "elapsedSeconds": 22.335362799999984
+        },
+        {
+            "file": "frames/frame_00082.png",
+            "elapsedSeconds": 22.58562780000011
+        },
+        {
+            "file": "frames/frame_00083.png",
+            "elapsedSeconds": 22.837240199999997
+        },
+        {
+            "file": "frames/frame_00084.png",
+            "elapsedSeconds": 23.089180299999953
+        },
+        {
+            "file": "frames/frame_00085.png",
+            "elapsedSeconds": 23.34068410000009
+        },
+        {
+            "file": "frames/frame_00086.png",
+            "elapsedSeconds": 23.591282299999875
+        },
+        {
+            "file": "frames/frame_00087.png",
+            "elapsedSeconds": 23.842261899999812
+        },
+        {
+            "file": "frames/frame_00088.png",
+            "elapsedSeconds": 24.093205099999977
+        },
+        {
+            "file": "frames/frame_00089.png",
+            "elapsedSeconds": 24.344460400000116
+        },
+        {
+            "file": "frames/frame_00090.png",
+            "elapsedSeconds": 24.595353299999715
+        },
+        {
+            "file": "frames/frame_00091.png",
+            "elapsedSeconds": 24.846645399999943
+        },
+        {
+            "file": "frames/frame_00092.png",
+            "elapsedSeconds": 25.097655099999884
+        },
+        {
+            "file": "frames/frame_00093.png",
+            "elapsedSeconds": 25.349036699999942
+        },
+        {
+            "file": "frames/frame_00094.png",
+            "elapsedSeconds": 25.600437900000088
+        },
+        {
+            "file": "frames/frame_00095.png",
+            "elapsedSeconds": 25.850838399999702
+        },
+        {
+            "file": "frames/frame_00096.png",
+            "elapsedSeconds": 26.101720999999998
+        },
+        {
+            "file": "frames/frame_00097.png",
+            "elapsedSeconds": 26.35309389999975
+        },
+        {
+            "file": "frames/frame_00098.png",
+            "elapsedSeconds": 26.60390849999976
+        },
+        {
+            "file": "frames/frame_00099.png",
+            "elapsedSeconds": 26.85542929999974
+        },
+        {
+            "file": "frames/frame_00100.png",
+            "elapsedSeconds": 27.10665599999993
+        },
+        {
+            "file": "frames/frame_00101.png",
+            "elapsedSeconds": 27.35720029999993
+        },
+        {
+            "file": "frames/frame_00102.png",
+            "elapsedSeconds": 27.609167099999922
+        },
+        {
+            "file": "frames/frame_00103.png",
+            "elapsedSeconds": 27.860362899999927
+        },
+        {
+            "file": "frames/frame_00104.png",
+            "elapsedSeconds": 28.111664499999733
+        },
+        {
+            "file": "frames/frame_00105.png",
+            "elapsedSeconds": 28.36241250000012
+        },
+        {
+            "file": "frames/frame_00106.png",
+            "elapsedSeconds": 28.613474199999928
+        },
+        {
+            "file": "frames/frame_00107.png",
+            "elapsedSeconds": 28.86372510000001
+        },
+        {
+            "file": "frames/frame_00108.png",
+            "elapsedSeconds": 29.114353800000117
+        },
+        {
+            "file": "frames/frame_00109.png",
+            "elapsedSeconds": 29.364943399999902
+        },
+        {
+            "file": "frames/frame_00110.png",
+            "elapsedSeconds": 29.615889499999867
+        },
+        {
+            "file": "frames/frame_00111.png",
+            "elapsedSeconds": 29.865935999999692
+        },
+        {
+            "file": "frames/frame_00112.png",
+            "elapsedSeconds": 30.116841600000043
+        },
+        {
+            "file": "frames/frame_00113.png",
+            "elapsedSeconds": 30.36898149999979
+        },
+        {
+            "file": "frames/frame_00114.png",
+            "elapsedSeconds": 30.620311899999706
+        },
+        {
+            "file": "frames/frame_00115.png",
+            "elapsedSeconds": 30.870492499999727
+        },
+        {
+            "file": "frames/frame_00116.png",
+            "elapsedSeconds": 31.121187599999757
+        },
+        {
+            "file": "frames/frame_00117.png",
+            "elapsedSeconds": 31.37304529999983
+        },
+        {
+            "file": "frames/frame_00118.png",
+            "elapsedSeconds": 31.62383039999986
+        },
+        {
+            "file": "frames/frame_00119.png",
+            "elapsedSeconds": 31.874707099999796
+        },
+        {
+            "file": "frames/frame_00120.png",
+            "elapsedSeconds": 32.12624959999994
+        },
+        {
+            "file": "frames/frame_00121.png",
+            "elapsedSeconds": 32.37632110000004
+        },
+        {
+            "file": "frames/frame_00122.png",
+            "elapsedSeconds": 32.627119799999946
+        },
+        {
+            "file": "frames/frame_00123.png",
+            "elapsedSeconds": 32.87795729999971
+        },
+        {
+            "file": "frames/frame_00124.png",
+            "elapsedSeconds": 33.128484099999696
+        },
+        {
+            "file": "frames/frame_00125.png",
+            "elapsedSeconds": 33.379086200000074
+        },
+        {
+            "file": "frames/frame_00126.png",
+            "elapsedSeconds": 33.630729099999826
+        },
+        {
+            "file": "frames/frame_00127.png",
+            "elapsedSeconds": 33.88163110000005
+        },
+        {
+            "file": "frames/frame_00128.png",
+            "elapsedSeconds": 34.164493299999776
+        },
+        {
+            "file": "frames/frame_00129.png",
+            "elapsedSeconds": 34.41588189999993
+        },
+        {
+            "file": "frames/frame_00130.png",
+            "elapsedSeconds": 34.66612309999982
+        },
+        {
+            "file": "frames/frame_00131.png",
+            "elapsedSeconds": 34.917354499999874
+        },
+        {
+            "file": "frames/frame_00132.png",
+            "elapsedSeconds": 35.16885169999978
+        },
+        {
+            "file": "frames/frame_00133.png",
+            "elapsedSeconds": 35.420718999999735
+        },
+        {
+            "file": "frames/frame_00134.png",
+            "elapsedSeconds": 35.67186769999989
+        },
+        {
+            "file": "frames/frame_00135.png",
+            "elapsedSeconds": 35.92310009999983
+        },
+        {
+            "file": "frames/frame_00136.png",
+            "elapsedSeconds": 36.174997000000076
+        },
+        {
+            "file": "frames/frame_00137.png",
+            "elapsedSeconds": 36.425919899999826
+        },
+        {
+            "file": "frames/frame_00138.png",
+            "elapsedSeconds": 36.6764291999998
+        }
+    ]
+}

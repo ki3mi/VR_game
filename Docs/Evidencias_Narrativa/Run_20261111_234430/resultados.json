@@ -1,0 +1,17 @@
+﻿{
+    "timestampUtc": "2026-11-11T23:44:37.7083228Z",
+    "scene": "Assets/Scenes/DataCenter_VR.unity",
+    "unityVersion": "6000.6.0f1",
+    "simulator": "UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator",
+    "status": "failed",
+    "configuredDurationSeconds": 0.0,
+    "elapsedSeconds": 0.35138630867004395,
+    "durationAssetUnchanged": false,
+    "visualReviewRequired": false,
+    "checks": [],
+    "stages": [],
+    "screenshots": [],
+    "errors": [
+        "System.NullReferenceException: Object reference not set to an instance of an object\r\n  at AndesSim.Editor.NarrativeValidation.Read (System.String property) [0x00000] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:421 \r\n  at AndesSim.Editor.NarrativeValidation.ReadString (System.String property) [0x00000] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:425 \r\n  at AndesSim.Editor.NarrativeValidation.get_Stage () [0x00000] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:428 \r\n  at AndesSim.Editor.NarrativeValidation.Tick () [0x00015] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:128 "
+    ]
+}

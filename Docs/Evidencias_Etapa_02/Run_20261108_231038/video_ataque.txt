@@ -1,0 +1,10 @@
+Video de evidencia de desarrollo: video_ataque.avi
+Formato: AVI 1.0 / Motion JPEG (MJPG), 960 x 444, 4 fps.
+Frames originales: 118; frames del video: 119.
+Duración: 29.750 s.
+Primer frame: t=14.843 s desde el inicio del run.
+Cadencia: remuestreo de los timestamps reales de resultados.json; se repite el último frame disponible durante los intervalos entre capturas.
+Relación de aspecto original conservada; ancho máximo configurado por PowerShell.
+Sin audio: la captura de frames de Game View no grabó una pista sonora.
+Estado funcional de origen: passed.
+La revisión visual y la validación de entrega Android se documentan por separado.

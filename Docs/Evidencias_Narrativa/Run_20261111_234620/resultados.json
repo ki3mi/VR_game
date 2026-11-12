@@ -1,0 +1,33 @@
+﻿{
+    "timestampUtc": "2026-11-11T23:46:25.9013322Z",
+    "scene": "Assets/Scenes/DataCenter_VR.unity",
+    "unityVersion": "6000.6.0f1",
+    "simulator": "UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator",
+    "status": "failed",
+    "configuredDurationSeconds": 90.0,
+    "elapsedSeconds": 7.366642475128174,
+    "durationAssetUnchanged": false,
+    "visualReviewRequired": false,
+    "checks": [
+        {
+            "id": "NAR-01",
+            "passed": true,
+            "observed": "Escena abre con la bienvenida del senior y simulador XR activo."
+        },
+        {
+            "id": "NAR-02",
+            "passed": true,
+            "observed": "Repetir la explicación mantiene el mismo objetivo."
+        }
+    ],
+    "stages": [
+        "Orientation",
+        "AccessQuery"
+    ],
+    "screenshots": [
+        "01_bienvenida.png"
+    ],
+    "errors": [
+        "System.InvalidOperationException: Resultado inesperado para consulta: andes access\nFUENTE: registro local / datos ficticios\n04/02/2016 20:36  LOGIN ACCEPTED\ncuenta: operador.swift   origen: 10.24.3.17\nsegundo_factor: AUSENTE   horario: FUERA DE 08:00–18:00\n\n→ La cuenta accedió sin segundo factor fuera del horario autorizado.\r\n  at AndesSim.Editor.NarrativeValidation+<Query>d__24.MoveNext () [0x001e7] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:294 \r\n  at AndesSim.Editor.NarrativeValidation.Tick () [0x0006b] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:132 "
+    ]
+}

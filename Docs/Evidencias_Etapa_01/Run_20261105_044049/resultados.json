@@ -1,0 +1,62 @@
+﻿{
+    "timestampUtc": "2026-11-05T04:40:56.3034688Z",
+    "scene": "Assets/Scenes/DataCenter_VR.unity",
+    "unityVersion": "6000.6.0f1",
+    "simulatorType": "UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator",
+    "inputMethod": "InputSystem.QueueStateEvent para teclado y ratón; tracking del XR Interaction Simulator; selección por mirada con Space",
+    "state": "failed",
+    "visualReviewRequired": true,
+    "teleports": 0,
+    "visited": 1,
+    "inspected": 0,
+    "tests": [
+        {
+            "id": "E1-P01",
+            "description": "Inicio y orientación con el simulador",
+            "passed": true,
+            "observed": "XRSimulatedHMD presente; giro rastreado por entrada RightArrow: 98.40°."
+        },
+        {
+            "id": "E1-P07",
+            "description": "Ejecución del recorrido sin errores",
+            "passed": false,
+            "observed": "Recorrido terminado: False; errores capturados en Play Mode: 1. Consola del Editor se revisa además por MCP después de salir."
+        }
+    ],
+    "errors": [
+        "System.InvalidOperationException: La mirada no alcanza Portal_Entrada. Objetivo actual: ninguno\r\n  at AndesSim.Editor.StageOneValidation+<AimAndSelect>d__26.MoveNext () [0x001c2] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\StageOneValidation.cs:328 \r\n  at AndesSim.Editor.StageOneValidation.Tick () [0x000fd] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\StageOneValidation.cs:182 "
+    ],
+    "screenshots": [
+        "01_entrada.png"
+    ],
+    "frames": [
+        {
+            "file": "frames/frame_00000.png",
+            "elapsedSeconds": 2.0009964000000764
+        },
+        {
+            "file": "frames/frame_00001.png",
+            "elapsedSeconds": 2.2509979999999814
+        },
+        {
+            "file": "frames/frame_00002.png",
+            "elapsedSeconds": 2.5025192000000516
+        },
+        {
+            "file": "frames/frame_00003.png",
+            "elapsedSeconds": 2.7527304000000186
+        },
+        {
+            "file": "frames/frame_00004.png",
+            "elapsedSeconds": 3.0039111999999477
+        },
+        {
+            "file": "frames/frame_00005.png",
+            "elapsedSeconds": 3.253941599999962
+        },
+        {
+            "file": "frames/frame_00006.png",
+            "elapsedSeconds": 3.5060479000001123
+        }
+    ]
+}

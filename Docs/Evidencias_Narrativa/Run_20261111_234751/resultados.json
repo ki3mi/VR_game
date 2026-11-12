@@ -1,0 +1,30 @@
+﻿{
+    "timestampUtc": "2026-11-11T23:47:56.9247946Z",
+    "scene": "Assets/Scenes/DataCenter_VR.unity",
+    "unityVersion": "6000.6.0f1",
+    "simulator": "UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator",
+    "status": "failed",
+    "configuredDurationSeconds": 90.0,
+    "elapsedSeconds": 7.373628616333008,
+    "durationAssetUnchanged": false,
+    "visualReviewRequired": false,
+    "checks": [
+        {
+            "id": "NAR-01",
+            "passed": true,
+            "observed": "Escena abre con la bienvenida del senior y simulador XR activo."
+        },
+        {
+            "id": "NAR-02",
+            "passed": true,
+            "observed": "Repetir la explicación mantiene el mismo objetivo."
+        }
+    ],
+    "stages": [],
+    "screenshots": [
+        "01_bienvenida.png"
+    ],
+    "errors": [
+        "System.InvalidOperationException: Etapa esperada Orientation, actual Welcome\r\n  at AndesSim.Editor.NarrativeValidation+<AwaitStage>d__26.MoveNext () [0x000f8] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:328 \r\n  at AndesSim.Editor.NarrativeValidation.Tick () [0x0006b] in C:\\Games\\grupo03\\Assets\\AndesSim\\Editor\\NarrativeValidation.cs:132 "
+    ]
+}

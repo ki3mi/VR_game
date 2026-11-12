@@ -1,0 +1,63 @@
+# Recorrido narrativo con XR Interaction Simulator
+
+Ejecución UTC: 2026-11-12T01:01:43.2286943Z. Escena: `Assets/Scenes/DataCenter_VR.unity`. Unity: 6000.6.0f1.
+Estado: `functional_and_visual_checks_passed`. Entradas: teclado y ratón del Input System para simulador XR y botones visibles; texto mediante eventos de teclado de Game View cuando el InputField UGUI requiere Event.PopEvent. No se asigna el texto del campo ni se invocan callbacks de progreso desde la prueba.
+Duración configurada del recurso: 90 s. El reloj narrativo avanza entre hitos y se detiene para la lectura. Recurso sin modificación: True.
+Tiempo de validación: 109.2 s.
+
+| Caso | Resultado | Observación |
+| --- | --- | --- |
+| NAR-01 | Cumple | Escena abre con la bienvenida del senior y simulador XR activo. |
+| CHAT-02 | Cumple | Escribiendo aparece antes de entregar el mensaje; la recepción incrementa el contador de notificación con clip y volumen activos. |
+| NAR-02 | Cumple | Guíame muestra la explicación de la acción; Repetir restaura el mensaje y mantiene el objetivo. |
+| CHAT-03 | Cumple | Las acciones del jugador producen mensajes propios y respuestas del mentor en el historial. |
+| SEQ-01 | Cumple | Se entrega una sola indicación y el resto espera Siguiente sin cambiar de objetivo ni ejecutar acciones. |
+| SEQ-02 | Cumple | Siguiente envía Ok, entrega una sola respuesta con escritura y devuelve las acciones del objetivo. |
+| SEQ-03 | Cumple | La cabecera, las burbujas y la presentación muestran Elliot Alderson sin prefijo Ing. |
+| NAR-03 | Cumple | Una consulta incompleta muestra corrección y permite reintentar el objetivo. |
+| CHAT-06 | Cumple | Terminal a la izquierda con teléfono visible a la derecha: comando cian, resultado verde y error coral. |
+| CHAT-07 | Cumple | Las instrucciones y explicaciones están en el chat; las tarjetas antiguas de objetivo o explicación no aparecen fuera del teléfono. |
+| NAR-04 | Cumple | Consulta e interpretación de cuenta, origen y hora de acceso antes del envío. |
+| NAR-05 | Cumple | Hitos exactos 20:36 → 22:06/36 órdenes → 05/02 03:59, con pausas para leer. |
+| NAR-06 | Cumple | Tres evidencias registradas en un orden distinto al guion: impresora, switch y registro. |
+| NAR-07 | Cumple | El jugador aplica MFA, política de horario y SIEM desde la interfaz del panel. |
+| NAR-08 | Cumple | Bloqueo real antes de envíos: cero órdenes, alarma activa y evento protegido. |
+| NAR-09 | Cumple | Tres consultas completadas: acceso, pagos y evento centralizado protegido. |
+| NAR-10 | Cumple | Comparación final basada en ataque de 36 órdenes y defensa de cero órdenes realizados en esta sesión. |
+| NAR-11 | Cumple | Recorrido terminado después de explicaciones, investigación y práctica técnica, con cierre accesible. |
+| CHAT-01 | Cumple | Elliot Alderson permanece visible en su teléfono a la derecha durante bienvenida, exploración, consola, comparación y cierre. |
+| CHAT-04 | Cumple | El historial sigue disponible y cada respuesta nueva desplaza automáticamente el chat hasta el último mensaje. |
+| CHAT-05 | Cumple | Ver últimos reactiva el seguimiento y muestra la última burbuja; los mensajes largos comienzan por su primera línea. |
+| REC-01 | Cumple | Repetir la prueba protegida conserva expediente 3/3, consultas únicas 3/3 y comparación 36 frente a 0. |
+| NAR-12 | Cumple | Reinicio completo devuelve a bienvenida sin evidencias, controles, alarma, consultas ni historial previos. |
+| REC-02 | Cumple | La explicación completa del senior aparece en el chat del teléfono mientras la consola permanece abierta. |
+| REC-03 | Cumple | El campo recibe foco y teclear W no mueve la cámara ni activa locomoción del simulador. |
+| REC-04 | Cumple | Cerrar antes de ejecutar conserva la tarea y ofrece Reabrir consulta; cerrar tras ejecutar conserva su interpretación y permite seguir. |
+| REC-05 | Cumple | Reiniciar durante la transmisión cancela su corrutina; tras nueve segundos sigue la bienvenida limpia. |
+| REC-06 | Cumple | Llévame lleva a la estación; el jugador selecciona la terminal con la mirada para abrir la práctica. |
+| REC-07 | Cumple | Reiniciar con la consola enfocada libera el campo y restaura movimiento WASD real al volver a explorar. |
+| SEQ-04 | Cumple | Reiniciar mientras Siguiente espera confirmación cancela la secuencia anterior y entrega solo la nueva bienvenida. |
+| CHAT-08 | Cumple | Todos los cuerpos de burbujas del mentor, jugador y sistema tienen altura suficiente para Text.preferredHeight y caben dentro de sus fondos y filas. |
+
+## Capturas
+
+- [01_bienvenida.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/01_bienvenida.png)
+- [13_elliot_escribiendo.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/13_elliot_escribiendo.png)
+- [15_primera_indicacion_siguiente.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/15_primera_indicacion_siguiente.png)
+- [16_segunda_indicacion_y_ok.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/16_segunda_indicacion_y_ok.png)
+- [02_consulta_accesos.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/02_consulta_accesos.png)
+- [03_ordenes_enviadas.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/03_ordenes_enviadas.png)
+- [04_evidencias_completas.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/04_evidencias_completas.png)
+- [05_defensas_preparadas.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/05_defensas_preparadas.png)
+- [06_intento_bloqueado.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/06_intento_bloqueado.png)
+- [07_comparacion_36_0.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/07_comparacion_36_0.png)
+- [08_conclusiones.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/08_conclusiones.png)
+- [09_entrenamiento_completado.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/09_entrenamiento_completado.png)
+- [14_historial_y_mensaje_nuevo.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/14_historial_y_mensaje_nuevo.png)
+- [10_defensa_repetida.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/10_defensa_repetida.png)
+- [11_guia_dentro_de_consola.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/11_guia_dentro_de_consola.png)
+- [12_movimiento_restaurado.png](C:/Games/grupo03/Docs/Evidencias_Narrativa/Run_20261112_010136/12_movimiento_restaurado.png)
+
+## Revisión visual
+
+Se revisaron por IA Siguiente, Ok, el nombre Elliot Alderson sin prefijo y el enfoque automático del último mensaje. Las capturas 15, 16 y 14 documentan esos resultados. La validación verificó además los 153 cuerpos de mensajes con un margen mínimo de 6 px. No se realizó un estudio con participantes.

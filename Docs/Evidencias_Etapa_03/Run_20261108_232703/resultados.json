@@ -1,0 +1,81 @@
+﻿{
+    "timestampUtc": "2026-11-08T23:27:10.9004702Z",
+    "scene": "Assets/Scenes/DataCenter_VR.unity",
+    "unityVersion": "6000.6.0f1",
+    "simulatorType": "UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator",
+    "state": "failed",
+    "configuredDurationSeconds": 90.0,
+    "testDurationSeconds": 24.0,
+    "firstAttackOrders": 36,
+    "defenseOrders": 0,
+    "secondAttackOrders": 36,
+    "largestDefenseCountOfOrders": 0,
+    "alarmSound": true,
+    "redLight": true,
+    "sessionBlocked": true,
+    "protectedEvent": true,
+    "defenseClock": "04/02/2016 20:36",
+    "stationsVisited": 6,
+    "objectsInspected": 5,
+    "visualReviewRequired": false,
+    "incompleteAttempts": [
+        0,
+        1,
+        2
+    ],
+    "tests": [
+        {
+            "id": "E3-P01",
+            "passed": true,
+            "observed": "MFA, fuera de horario y SIEM activos. Cada pulsación repetida conservó el contador."
+        },
+        {
+            "id": "E3-P02",
+            "passed": true,
+            "observed": "Los intentos con cero, uno y dos controles indicaron pendientes y mantuvieron el estado en preparación y las órdenes en cero."
+        },
+        {
+            "id": "E3-P03",
+            "passed": true,
+            "observed": "Intento a las 04/02/2016 20:36. Sonido, luz roja y mensaje de sesión bloqueada activos con cero órdenes."
+        },
+        {
+            "id": "E3-P04",
+            "passed": true,
+            "observed": "La terminal muestra el evento SIEM protegido del intento bloqueado. Órdenes enviadas en defensa: 0."
+        },
+        {
+            "id": "E3-P05",
+            "passed": false,
+            "observed": "Comparación 36 frente a 0 en ambos modos. La defensa se mostró como referencia antes de ejecutarse y luego como ejecución previa."
+        },
+        {
+            "id": "E3-P06",
+            "passed": true,
+            "observed": "Ciclo 36 → 0 → 36 en una sola ejecución de Play Mode. Reinicios con reloj, contadores, evidencias, controles y alarma limpios."
+        },
+        {
+            "id": "E3-P07",
+            "passed": true,
+            "observed": "Portal, seis destinos alcanzados por teletransporte y cinco fichas abiertas por mirada."
+        },
+        {
+            "id": "E3-P08",
+            "passed": false,
+            "observed": "Ambos modos completados. I abrió instrucciones, 1 abrió créditos y Esc cerró la ficha. Errores de ejecución: 0."
+        }
+    ],
+    "screenshots": [
+        "01_ataque_con_defensa_de_referencia.png",
+        "02_control_pendiente.png",
+        "03_tres_controles_activos.png",
+        "04_alarma_roja_y_bloqueo.png",
+        "05_evento_protegido_SIEM.png",
+        "06_comparacion_defensa_actual.png",
+        "07_reinicio_sin_alarma.png",
+        "08_segundo_ataque_36_ordenes.png",
+        "09_instrucciones.png",
+        "10_creditos.png"
+    ],
+    "errors": []
+}

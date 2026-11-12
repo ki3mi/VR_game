@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 508b0016039bed64295bc5ed7300f696, type: 3}
+  m_Name: DataCenterAttack
+  m_EditorClassIdentifier: Assembly-CSharp::AndesSim.ScenarioData
+  startTimestamp: 2016-02-04 20:36
+  ordersDeadlineTimestamp: 2016-02-04 22:06
+  endTimestamp: 2016-02-05 03:59
+  durationSeconds: 90
+  totalOrders: 36
+  totalAmountUsd: 951000000
+  scenarioTitle: La transferencia fantasma
+  preparationNotice: "Desde la terminal SWIFT puedes iniciar la reconstrucci\xF3n de la noche."
+  sessionNotice: "Se inicia una sesi\xF3n fuera de horario con las credenciales del operador. El acceso pasa inadvertido."
+  ordersNotice: "La terminal ha enviado todas las \xF3rdenes del ataque. La impresora de confirmaciones permanece apagada."
+  closingNotice: "El intruso cierra la sesi\xF3n. Las evidencias de la noche siguen disponibles para su revisi\xF3n."
+  logGapNotice: "Los saltos en la numeraci\xF3n revelan que se borraron registros locales."
