@@ -84,6 +84,11 @@ namespace AndesSim.Editor
                 Debug.LogWarning("Abre DataCenter_VR en Edit Mode para validar la narrativa.");
                 return;
             }
+            if (Object.FindAnyObjectByType<MobileExperience>() != null)
+            {
+                Debug.LogWarning("Esta escena usa controles móviles. Ejecuta Andes-Sim > Android > Validar diálogo y recorrido táctil.");
+                return;
+            }
             output = Path.Combine(Path.GetFullPath(Path.Combine(Application.dataPath, "..")), "Docs",
                 "Evidencias_Narrativa", "Run_" + DateTime.UtcNow.ToString("yyyyMMdd_HHmmss"));
             Directory.CreateDirectory(output);

@@ -29434,7 +29434,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   initialStationId: TP_Entrada
-  simulatorInstructions: "C\xC1MARA: joystick o giroscopio\nToca los equipos o usa Inspeccionar.\nNavega por teletransporte o Ll\xE9vame."
+  simulatorInstructions: 'Arrastra sobre la sala o usa el giroscopio para mirar.
+
+    Toca los equipos y destinos de teletransporte.'
 --- !u!114 &1863458713
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -19,7 +19,7 @@ namespace AndesSim
         public float simulatorEyeHeight = 1.65f;
         public LayerMask raycastMask = ~0;
         public string initialStationId = "TP_Entrada";
-        [TextArea] public string simulatorInstructions = "CÁMARA: joystick o giroscopio\nToca los equipos o usa Inspeccionar\nNavegación por teletransporte";
+        [TextArea] public string simulatorInstructions = "Arrastra para mirar o activa el giroscopio.\nToca los equipos y destinos de teletransporte.";
 
         public ExplorationTarget CurrentTarget { get; private set; }
         public string LastSelectedId { get; private set; }
@@ -96,6 +96,9 @@ namespace AndesSim
                 c.a = Mathf.MoveTowards(c.a, 0, Time.unscaledDeltaTime * 4);
                 fade.color = c;
             }
+
+            // The mobile gesture owns selection so a drag cannot trigger a world action on press.
+            if (MobileExperience.Instance != null) return;
 
             RefreshGaze();
             if (Touchscreen.current != null)
@@ -358,12 +361,15 @@ namespace AndesSim
             help.anchorMin = help.anchorMax = new Vector2(.5f, 1);
             help.anchoredPosition = new Vector2(-490, -170);
 #endif
-            var dot = Box(root.transform, "GazeReticle", Vector2.zero, new Vector2(7, 7), Color.white);
-            reticle = dot.GetComponent<Image>();
-            Box(root.transform, "ReticleTop", new Vector2(0, 15), new Vector2(2, 7), new Color(0.5f, 1, 0.8f, 0.75f));
-            Box(root.transform, "ReticleBottom", new Vector2(0, -15), new Vector2(2, 7), new Color(0.5f, 1, 0.8f, 0.75f));
-            Box(root.transform, "ReticleLeft", new Vector2(-15, 0), new Vector2(7, 2), new Color(0.5f, 1, 0.8f, 0.75f));
-            Box(root.transform, "ReticleRight", new Vector2(15, 0), new Vector2(7, 2), new Color(0.5f, 1, 0.8f, 0.75f));
+            if (MobileExperience.Instance == null)
+            {
+                var dot = Box(root.transform, "GazeReticle", Vector2.zero, new Vector2(7, 7), Color.white);
+                reticle = dot.GetComponent<Image>();
+                Box(root.transform, "ReticleTop", new Vector2(0, 15), new Vector2(2, 7), new Color(0.5f, 1, 0.8f, 0.75f));
+                Box(root.transform, "ReticleBottom", new Vector2(0, -15), new Vector2(2, 7), new Color(0.5f, 1, 0.8f, 0.75f));
+                Box(root.transform, "ReticleLeft", new Vector2(-15, 0), new Vector2(7, 2), new Color(0.5f, 1, 0.8f, 0.75f));
+                Box(root.transform, "ReticleRight", new Vector2(15, 0), new Vector2(7, 2), new Color(0.5f, 1, 0.8f, 0.75f));
+            }
 
             inspectionPanel = Box(root.transform, "InspectionPanel", new Vector2(0, 5), new Vector2(860, 470), new Color(0.015f, 0.04f, 0.05f, 1f)).gameObject;
             Box(inspectionPanel.transform, "Accent", new Vector2(-422, 0), new Vector2(5, 470), new Color(0.27f, 1, 0.65f));

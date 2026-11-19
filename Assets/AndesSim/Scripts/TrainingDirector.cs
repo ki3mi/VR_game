@@ -58,10 +58,9 @@ namespace AndesSim
         Vector3 originalPosition, originalForward;
         float moveX, moveY, moveZ, rotateX, rotateY, scrollRotation;
         bool inputSuspended, initialized, changing;
-        float idleTime, lastActionTime;
-        int hintLevel;
+        float lastActionTime;
         int trainingGeneration;
-        string currentExplanation, objective, chapter;
+        string objective, chapter;
         string inspectedEvidence;
         Coroutine transmission;
 
@@ -94,10 +93,7 @@ namespace AndesSim
             exploration.NarrativePresenter = mentor;
             exploration.SetGuidedMode(true);
             exploration.TargetActivated += OnTargetActivated;
-            mentor.HelpRequested += ExplainAction;
-            mentor.RepeatRequested += RepeatExplanation;
             mentor.RestartRequested += BeginNewTraining;
-            mentor.TerminalClosed += OnTerminalClosed;
             game.Changed += RefreshStatus;
             BuildMarker();
             initialized = true;
@@ -112,16 +108,6 @@ namespace AndesSim
             if (simulator != null)
                 simulator.mouseScrollRotateSensitivity = mentor.BlocksWorldInput || mentor.PointerOverUI ? 0 : scrollRotation;
             UpdateAttention();
-            bool acting = Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame ||
-                          Mouse.current != null && (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.isPressed);
-            if (acting) idleTime = 0;
-            // Reading and exercises are fully explained; reminders only apply while exploring.
-            if (mentor.IsReadyForAction && !mentor.IsReading && !mentor.IsTerminalOpen && inspectedEvidence == null && IsSpatialStage()) idleTime += Time.unscaledDeltaTime;
-            if (idleTime >= 25 && hintLevel == 0)
-            {
-                hintLevel = 1;
-                mentor.SetMessage(currentExplanation + "\n\nPuedes pulsar «Guíame» para ver la acción exacta o usar «Llévame» para llegar al equipo.");
-            }
         }
 
         void OnDestroy()
@@ -136,10 +122,7 @@ namespace AndesSim
             }
             if (mentor != null)
             {
-                mentor.HelpRequested -= ExplainAction;
-                mentor.RepeatRequested -= RepeatExplanation;
                 mentor.RestartRequested -= BeginNewTraining;
-                mentor.TerminalClosed -= OnTerminalClosed;
             }
             if (game != null) game.Changed -= RefreshStatus;
             if (marker != null) Destroy(marker.gameObject);
@@ -179,9 +162,10 @@ namespace AndesSim
         void Enter(TrainingStage next)
         {
             Stage = next;
-            idleTime = 0; hintLevel = 0; inspectedEvidence = null;
+            inspectedEvidence = null;
             mentor.CloseTerminal();
             attentionTarget = null;
+            string explanation;
             string action = null;
             Action callback = null;
             bool modal = false;
@@ -190,7 +174,7 @@ namespace AndesSim
                 case TrainingStage.Welcome:
                     chapter = "01 / BIENVENIDA AL EQUIPO";
                     objective = "Reconstruye el incidente y aprende a impedir que se repita";
-                    currentExplanation = "Soy Elliot Alderson, ingeniero senior de ciberseguridad del Banco Andino. Hoy trabajarás conmigo: investigaremos una sesión nocturna, sus 36 órdenes de pago y las señales que quedaron en esta sala. Después aplicarás las defensas y comprobarás el resultado.\n\nEste teléfono será nuestro canal de trabajo. Me informarás de las acciones que completes y te responderé con el siguiente paso. Puedes revisar toda la conversación con la barra lateral. Los datos y comandos del laboratorio son ficticios.";
+                    explanation = "Soy Elliot Alderson. Investigaremos una sesión nocturna y probaremos cómo prevenir otro incidente. Los datos del ejercicio son ficticios.";
                     action = "Comenzar entrenamiento";
                     callback = () => Enter(TrainingStage.Orientation);
                     modal = true;
@@ -198,58 +182,58 @@ namespace AndesSim
                 case TrainingStage.Orientation:
                     chapter = "02 / RECONSTRUIR EL ACCESO";
                     objective = "Acércate a la TERMINAL SWIFT y selecciónala";
-                    currentExplanation = "Empecemos por la terminal que envía las órdenes. Sigue el marcador verde. Orienta la cámara con el joystick o el giroscopio. Toca la terminal o céntrala y pulsa Inspeccionar. También puedes pulsar «Llévame» para llegar y después seleccionarla.\n\nSWIFT es una red de mensajería financiera: una orden enviada aún no equivale a dinero robado.";
+                    explanation = "SWIFT transmite órdenes de pago. Cuando una orden se envía, su procesamiento aún está pendiente.\n\nArrastra para mirar. Usa «Llévame al objetivo» o toca un destino de teletransporte. Cuando llegues, toca la terminal marcada.";
                     attentionTarget = Target("terminal_swift");
                     break;
                 case TrainingStage.AccessQuery:
                     chapter = "02 / RECONSTRUIR EL ACCESO";
                     objective = "Ejecuta la consulta de accesos y revisa la sesión de las 20:36";
-                    currentExplanation = "La reconstrucción está detenida a las 20:36 del 4 de febrero de 2016. Consultaremos quién abrió la sesión y desde dónde. Te explicaré aquí el comando completo: puedes escribirlo o cargar el ejemplo en la terminal de la izquierda. Los comandos aparecen en cian y las salidas válidas en verde. Ninguna contraseña aparece en el registro.";
+                    explanation = "La sesión empezó el 4 de febrero de 2016 a las 20:36. Los filtros --from y --to delimitan el horario que vamos a revisar.";
                     break;
                 case TrainingStage.AccessReview:
                     chapter = "02 / RECONSTRUIR EL ACCESO";
                     objective = "Identifica el acceso fuera de horario en la salida";
-                    currentExplanation = "La fila de las 20:36 muestra a operador.swift desde 10.24.3.17. La cuenta es reconocida, pero no hay segundo factor y el acceso ocurre fuera del horario autorizado. Un inicio de sesión correcto no demuestra que la persona sea legítima. Señala esa fila con el botón para anotarla y observar los envíos.";
+                    explanation = "La cuenta abrió una sesión fuera de horario y sin segundo factor.";
                     break;
                 case TrainingStage.Transmission:
                     chapter = "03 / OBSERVAR LOS ENVÍOS";
                     objective = "Observa el reloj y el contador hasta las 22:06";
-                    currentExplanation = "Continuamos la reproducción acelerada. La sesión consiguió llegar a la función de envío. Observa cómo suben las órdenes aunque la impresora permanezca apagada. Al llegar a las 22:06 detendré la reproducción para que consultes la cola de pagos.";
+                    explanation = "Observa cómo suben las órdenes hasta las 22:06, mientras la impresora sigue apagada.";
                     break;
                 case TrainingStage.PaymentQuery:
                     chapter = "03 / OBSERVAR LOS ENVÍOS";
                     objective = "Selecciona la terminal y consulta las órdenes enviadas";
-                    currentExplanation = "Ya son las 22:06 y el contador indica 36 órdenes. Vuelve a seleccionar la terminal para consultar la cola. El filtro «sent» significa enviadas. Contrastar la cola con las confirmaciones impresas nos permite detectar actividad que habría pasado inadvertida mirando solo la impresora.";
+                    explanation = "Son las 22:06 y hay 36 órdenes. Toca la terminal para comprobar cuáles salieron.";
                     attentionTarget = Target("terminal_swift");
                     break;
                 case TrainingStage.PaymentReview:
                     chapter = "03 / OBSERVAR LOS ENVÍOS";
                     objective = "Relaciona las 36 órdenes con la impresora apagada";
-                    currentExplanation = "La cola confirma 36 órdenes enviadas a las 22:06. Su monto total intentado es US$951 millones; este laboratorio no afirma que ese dinero haya sido robado. La impresora está apagada, pero eso no detuvo los envíos. Confirma la lectura y veremos cuándo terminó la sesión.";
+                    explanation = "La cola confirma 36 órdenes enviadas, aunque la impresora estaba apagada.";
                     break;
                 case TrainingStage.SessionEnd:
                     chapter = "03 / FIN DE LA RECONSTRUCCIÓN";
                     objective = "Revisa el cierre a las 03:59 del día siguiente";
-                    currentExplanation = "La sesión terminó a las 03:59 del 5 de febrero. La primera ejecución quedó registrada con 36 órdenes. Ahora investigaremos qué evidencia local quedó. Guardaremos tres hallazgos antes de preparar una nueva ejecución protegida. Puedes visitarlos en cualquier orden.";
+                    explanation = "La sesión terminó a las 03:59 del 5 de febrero. Busca los tres hallazgos de la sala para reconstruir qué ocurrió.";
                     action = "Investigar la sala";
                     callback = () => Enter(TrainingStage.Investigate);
                     break;
                 case TrainingStage.Investigate:
                     chapter = "04 / CONSERVAR LAS EVIDENCIAS";
                     objective = "Inspecciona y guarda las tres evidencias de la sala";
-                    currentExplanation = InvestigationMessage();
+                    explanation = InvestigationMessage();
                     attentionTarget = NextEvidenceTarget();
                     break;
                 case TrainingStage.PrepareDefense:
                     chapter = "05 / PREPARAR LA DEFENSA";
                     objective = "Ve al PANEL DE SEGURIDAD y selecciónalo";
-                    currentExplanation = "Conservamos los tres hallazgos en tu expediente. He preparado otra ejecución del mismo intento; los resultados del ataque siguen disponibles. En el panel activaremos tres controles y te explicaré sus funciones. Se aplican antes de abrir la sesión: no estamos cambiando el pasado ni borrando el incidente.";
+                    explanation = "Ya tienes las tres evidencias. Toca el panel de seguridad para activar los controles antes de repetir el intento.";
                     attentionTarget = Target("panel_controles");
                     break;
                 case TrainingStage.Mfa:
                     chapter = "05 / AUTENTICACIÓN";
                     objective = "Activa MFA en el panel de seguridad";
-                    currentExplanation = "MFA añade un factor independiente a la contraseña, por ejemplo una llave de seguridad. Aunque alguien conozca la clave del operador, debe superar esa verificación. Aquí el control protege el acceso privilegiado de la terminal. Actívalo y observa cómo su indicador pasa a verde.";
+                    explanation = "MFA exige un segundo factor, como una llave de seguridad. Actívalo y observa cómo cambia el indicador.";
                     action = "Activar MFA";
                     callback = () => ActivateControl(DefenseControl.MfaId, TrainingStage.Schedule);
                     attentionTarget = Target("panel_controles");
@@ -257,7 +241,7 @@ namespace AndesSim
                 case TrainingStage.Schedule:
                     chapter = "05 / AUTORIZACIÓN";
                     objective = "Activa la política de horario con bloqueo y alerta";
-                    currentExplanation = "MFA ya está activo. Ahora configuramos la autorización: en esta práctica solo se permite iniciar sesiones de 08:00 a 18:00. Fuera de ese intervalo, la política rechaza el acceso y genera una alerta. La alerta informa; la regla de bloqueo es la que impide continuar. Activa la política.";
+                    explanation = "La política permite el acceso de 08:00 a 18:00. Fuera de ese horario, bloquea la sesión y envía una alerta.";
                     action = "Activar horario y bloqueo";
                     callback = () => ActivateControl(DefenseControl.ScheduleId, TrainingStage.Siem);
                     attentionTarget = Target("panel_controles");
@@ -265,7 +249,7 @@ namespace AndesSim
                 case TrainingStage.Siem:
                     chapter = "05 / OBSERVABILIDAD Y EVIDENCIA";
                     objective = "Activa el SIEM con protección del registro";
-                    currentExplanation = "La autenticación y la política de horario previenen el acceso. El SIEM tiene otro papel: reúne eventos para investigarlos. En este laboratorio, la copia central usa acceso restringido y protección de integridad para conservar evidencia si se altera un log local. Actívalo; centralizar por sí solo no vuelve un registro inalterable.";
+                    explanation = "El SIEM reúne los eventos para investigarlos. Activa la copia central con acceso restringido y protección de integridad.";
                     action = "Activar SIEM protegido";
                     callback = () => ActivateControl(DefenseControl.SiemId, TrainingStage.DefenseReady);
                     attentionTarget = Target("panel_controles");
@@ -273,31 +257,31 @@ namespace AndesSim
                 case TrainingStage.DefenseReady:
                     chapter = "06 / PROBAR LOS CONTROLES";
                     objective = "Regresa a la TERMINAL SWIFT y selecciona el intento protegido";
-                    currentExplanation = "Los tres indicadores están activos. Regresa a la terminal para repetir el acceso de las 20:36 con la misma situación inicial. La simulación exige este conjunto de controles como política de preparación. Vamos a comprobar tanto la prevención del envío como la evidencia del intento.";
+                    explanation = "Con los tres controles activos, vuelve a la terminal y repite el intento de las 20:36.";
                     attentionTarget = Target("terminal_swift");
                     break;
                 case TrainingStage.DefenseResult:
                     chapter = "06 / INTENTO BLOQUEADO";
                     objective = "Comprueba el bloqueo, la baliza roja y las 0 órdenes";
-                    currentExplanation = "El intento quedó bloqueado a las 20:36, antes de enviar órdenes. Observa la baliza roja y escucha la alarma. MFA y la regla de horario protegen el acceso; el SIEM conserva el evento. Confirmemos ahora esa evidencia en la terminal. Puedes silenciar la alarma sin eliminar el bloqueo ni el registro.";
+                    explanation = "La sesión se bloqueó a las 20:36 con 0 órdenes. La baliza y la alarma avisan del rechazo. El SIEM conserva el evento.";
                     action = "Revisar el evento protegido";
                     callback = () => Enter(TrainingStage.ProtectedQuery);
                     break;
                 case TrainingStage.ProtectedQuery:
                     chapter = "07 / VERIFICAR LA EVIDENCIA";
                     objective = "Selecciona la terminal y consulta el evento bloqueado";
-                    currentExplanation = "Busca el evento cuyo resultado sea «blocked». Su hora debe coincidir con el intento de las 20:36. La salida mostrará el motivo del rechazo, los controles y la copia central protegida. Así verificamos el resultado con datos, además de observar la alarma.";
+                    explanation = "Toca la terminal para consultar el evento de bloqueo que quedó registrado en el SIEM.";
                     attentionTarget = Target("terminal_swift");
                     break;
                 case TrainingStage.ProtectedReview:
                     chapter = "07 / VERIFICACIÓN COMPLETADA";
                     objective = "Identifica el evento centralizado de bloqueo";
-                    currentExplanation = "El evento confirma «BLOCKED», horario no autorizado y 0 órdenes. También identifica el segundo factor requerido y la copia central con acceso restringido e integridad verificada. Esto permite investigar el intento. El SIEM no envió el bloqueo: la política de acceso lo hizo y el SIEM conservó su evidencia.";
+                    explanation = "El evento de las 20:36 confirma el bloqueo y las 0 órdenes enviadas.";
                     break;
                 case TrainingStage.Comparison:
                     chapter = "08 / COMPARAR LAS DOS EJECUCIONES";
                     objective = "Compara tus resultados reales: 36 órdenes frente a 0";
-                    currentExplanation = "ATAQUE · EJECUCIÓN PREVIA: " + game.AttackResultOrders + " órdenes enviadas.\nDEFENSA · EJECUCIÓN ACTUAL: " + game.DefenseResultOrders + " órdenes enviadas.\n\nConservaste " + TrainingEvidenceCount + "/3 evidencias y realizaste " + QueryCount + "/3 consultas. Cambiaron los controles antes del intento. El monto de US$951 millones corresponde a órdenes intentadas; su procesamiento posterior pertenece a otro escenario.";
+                    explanation = "ATAQUE · EJECUCIÓN PREVIA: " + game.AttackResultOrders + " órdenes enviadas.\nDEFENSA · EJECUCIÓN ACTUAL: " + game.DefenseResultOrders + " órdenes enviadas.\n\nReuniste " + TrainingEvidenceCount + "/3 evidencias y completaste " + QueryCount + "/3 consultas. Los controles estaban activos antes del segundo intento.";
                     action = "Revisar lo aprendido";
                     callback = () => Enter(TrainingStage.Debrief);
                     modal = true;
@@ -305,7 +289,7 @@ namespace AndesSim
                 case TrainingStage.Debrief:
                     chapter = "08 / CIERRE CON ELLIOT";
                     objective = "Relaciona cada acción con su función de seguridad";
-                    currentExplanation = "Trabajaste como parte del equipo: consultaste el acceso y la cola, contrastaste tres evidencias y verificaste el bloqueo.\n\nAUTENTICACIÓN · MFA verifica un factor adicional.\nAUTORIZACIÓN · La política limita cuándo se permite acceder.\nPREVENCIÓN · El rechazo evita el envío en esta prueba.\nOBSERVABILIDAD · El SIEM conserva el evento protegido.\n\nUna impresora apagada no demuestra ausencia de operaciones; un hueco exige contrastar fuentes, no inventar lo que falta.";
+                    explanation = "MFA verifica un segundo factor. La política de horario decide cuándo se autoriza el acceso y bloquea las sesiones fuera de turno.\n\nEl SIEM conserva la evidencia del intento. Contrasta siempre los registros con otras fuentes.";
                     action = "Finalizar entrenamiento";
                     callback = () => Enter(TrainingStage.Completed);
                     modal = true;
@@ -313,7 +297,7 @@ namespace AndesSim
                 default:
                     chapter = "ENTRENAMIENTO COMPLETADO";
                     objective = "Caso cerrado · 36 → 0 órdenes";
-                    currentExplanation = "Buen trabajo. Completaste el recorrido y comprobaste cómo cambió el resultado al preparar los controles. Puedes comenzar otra sesión completa o repetir solo la prueba protegida conservando la comparación.\n\nCRÉDITOS · Entorno y sonidos: ANDES-SIM. Unity XR Interaction Toolkit, Simulator y fuente LegacyRuntime: Unity Technologies. Liberation Sans: Google y Red Hat, SIL OFL 1.1. Asistencia de Codex, OpenAI, en código, narrativa y documentación. Datos, cuentas, IP y comandos ficticios.";
+                    explanation = "Caso cerrado. Puedes empezar otro entrenamiento o repetir la prueba protegida con el expediente actual.\n\nCRÉDITOS\nEntorno y sonidos: ANDES-SIM.\nUnity XR Interaction Toolkit, Simulator y LegacyRuntime: Unity Technologies.\n\nLiberation Sans: Google y Red Hat, SIL OFL 1.1.\nRoboto Mono: Google, Apache 2.0.\nRetrato y asistencia en el desarrollo: OpenAI.";
                     action = "Nuevo entrenamiento";
                     callback = BeginNewTraining;
                     modal = true;
@@ -321,8 +305,9 @@ namespace AndesSim
                     break;
             }
             string report = StageConfirmation(next);
-            mentor.Show(chapter, objective, currentExplanation, action, Guard(callback, report), (int)next + 1,
+            mentor.Show(chapter, objective, explanation, action, Guard(callback, report), (int)next + 1,
                 Enum.GetValues(typeof(TrainingStage)).Length, modal);
+            mentor.SetPendingEvidence(next == TrainingStage.Investigate ? PendingEvidenceTitles() : null);
             if (action == null) mentor.SetActions(null, null);
             if (IsSpatialStage()) SetTravelAction();
             if (next == TrainingStage.DefenseResult)
@@ -359,18 +344,16 @@ namespace AndesSim
                     action();
                 }
                 finally { changing = false; }
-                idleTime = 0;
             };
         }
 
         void OnTargetActivated(ExplorationTarget target)
         {
             if (!mentor.IsReadyForAction) return;
-            idleTime = 0;
             if (target.kind != ExplorationTarget.Kind.Inspection)
             {
                 mentor.AddPlayerMessage("Me desplacé a " + target.title + ".");
-                mentor.SetMessage("Estás en " + target.title + ". El objetivo sigue siendo: " + objective + ". Usa la retícula para seleccionar el equipo o las acciones de este chat para continuar.");
+                mentor.SetMessage("Estás en " + target.title + ". Toca el equipo señalado por el marcador.");
                 return;
             }
             mentor.AddPlayerMessage("Inspeccioné " + target.title + ".");
@@ -380,7 +363,7 @@ namespace AndesSim
                 switch (Stage)
                 {
                     case TrainingStage.Orientation:
-                        if (!game.StartAttack()) { mentor.SetMessage("No se pudo preparar la reconstrucción. Usa Nuevo entrenamiento para restaurarla."); return; }
+                        if (!game.StartAttack()) { mentor.SetMessage("La reconstrucción no pudo empezar. Abre Menú y usa «Reiniciar entrenamiento»."); return; }
                         game.SetSimulationPaused(true);
                         Enter(TrainingStage.AccessQuery);
                         OpenQuery(); return;
@@ -389,7 +372,7 @@ namespace AndesSim
                     case TrainingStage.ProtectedQuery:
                         OpenQuery(); return;
                     case TrainingStage.DefenseReady:
-                        mentor.SetMessage("Los tres controles están activos. Pulsa «Simular intento protegido» para repetir el acceso de las 20:36. Tú inicias esta prueba.");
+                        mentor.SetMessage("Pulsa «Simular intento protegido» para repetir el intento de las 20:36.");
                         mentor.SetActions("Simular intento protegido", Guard(StartProtectedAttempt), "Llévame a terminal", Guard(TravelToAttention));
                         return;
                 }
@@ -403,62 +386,42 @@ namespace AndesSim
                 InspectEvidence(evidence); return;
             }
             if (target.uniqueId == "panel_controles" && Stage >= TrainingStage.Mfa && Stage <= TrainingStage.Siem)
-            {
-                mentor.SetMessage(currentExplanation); return;
-            }
+                return;
             string description = target.uniqueId == "rack_servidor" || target.uniqueId.StartsWith("rack", StringComparison.Ordinal)
-                ? "Los racks alojan servidores. Nuestro incidente se centra en la terminal y su acceso; inspeccionar un servidor no demuestra que haya sido comprometido."
-                : "Puedes explorar este equipo. Para continuar el caso, completa el objetivo que aparece arriba; el marcador verde indica el siguiente lugar.";
-            mentor.SetMessage(description + "\n\n" + currentExplanation);
+                ? "Los racks alojan servidores. Para este caso, toca el equipo marcado."
+                : "Sigue el marcador verde para completar el objetivo.";
+            mentor.SetMessage(description);
         }
 
         void OpenQuery()
         {
-            if (Stage == TrainingStage.PaymentQuery && game.CurrentTime < game.data.OrdersDeadline ||
-                Stage == TrainingStage.ProtectedQuery && !game.ProtectedEventRecorded) return;
-            string example = Stage == TrainingStage.AccessQuery ? AccessCommand :
-                Stage == TrainingStage.PaymentQuery ? PaymentCommand : ProtectedCommand;
-            string purpose = Stage == TrainingStage.AccessQuery
-                ? "andes es la consola ficticia del laboratorio. access consulta accesos; --from y --to delimitan el intervalo horario. Ejecuta el ejemplo y busca la fila de las 20:36: cuenta, origen y segundo factor."
-                : Stage == TrainingStage.PaymentQuery
-                    ? "payments consulta la cola de pagos; --status sent filtra las órdenes enviadas. Comprueba el contador y la hora, y contrástalos con la impresora apagada. Esta consulta no envía ningún pago."
-                    : "events consulta la copia central; --result blocked filtra los accesos rechazados. Comprueba la hora, el motivo de bloqueo y la protección del evento. La consulta solo lee datos de esta simulación.";
-            mentor.SetTerminal("TERMINAL ANDES / LABORATORIO", purpose, example, RunQuery);
-            // The terminal already has a Back button. Its main continuation appears
-            // only when a successful query has produced something to interpret.
+            TrainingStage query = Stage;
+            if (query == TrainingStage.PaymentQuery && game.CurrentTime < game.data.OrdersDeadline ||
+                query == TrainingStage.ProtectedQuery && !game.ProtectedEventRecorded) return;
+
+            string command = query == TrainingStage.AccessQuery ? AccessCommand :
+                query == TrainingStage.PaymentQuery ? PaymentCommand : ProtectedCommand;
+            string instruction = query == TrainingStage.AccessQuery
+                ? "Pulsa «Ejecutar» para buscar la sesión de las 20:36. Fíjate en la cuenta, el origen y el segundo factor."
+                : query == TrainingStage.PaymentQuery
+                    ? "El filtro sent muestra las órdenes enviadas. Pulsa «Ejecutar» y comprueba la hora y el total."
+                    : "El filtro blocked muestra los accesos rechazados. Pulsa «Ejecutar» y revisa el motivo y la hora del bloqueo.";
+            LastQuerySucceeded = false;
+            LastQueryOutput = string.Empty;
             mentor.SetActions(null, null);
+            mentor.SetTerminal(command, instruction, Guard(() => RunQuery(command)));
+            if (query == TrainingStage.ProtectedQuery) alarm?.Silence();
         }
 
-        void OnTerminalClosed()
+        void RunQuery(string command)
         {
-            if (Stage == TrainingStage.AccessQuery || Stage == TrainingStage.PaymentQuery || Stage == TrainingStage.ProtectedQuery)
-                mentor.SetActions("Reabrir consulta de terminal", Guard(OpenQuery, "Retomé la consulta de terminal que había dejado pendiente."));
-        }
-
-        void RunQuery(string input)
-        {
-            if (!mentor.IsReadyForAction || Stage != TrainingStage.AccessQuery && Stage != TrainingStage.PaymentQuery && Stage != TrainingStage.ProtectedQuery) return;
-            mentor.AddPlayerMessage("Ejecuté en la terminal:\n" + (string.IsNullOrWhiteSpace(input) ? "[consulta vacía]" : input.Trim()));
-            string normalized = string.Join(" ", (input ?? "").Trim().ToLowerInvariant()
-                .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
-            string expected = Stage == TrainingStage.AccessQuery ? AccessCommand : Stage == TrainingStage.PaymentQuery ? PaymentCommand : ProtectedCommand;
-            LastQuerySucceeded = normalized == expected;
-            if (!LastQuerySucceeded)
-            {
-                LastQueryOutput = "ERROR · CONSULTA NO RECONOCIDA\ncomando esperado: " + expected + "\nresultado: sin ejecutar";
-                mentor.SetTerminalOutput(LastQueryOutput, false);
-                mentor.SetMessage("La consulta no se ejecutó. Revisa el nombre y los filtros. Para esta tarea usamos:\n" + expected +
-                    "\n\nPulsa «Usar ejemplo» en la terminal para cargarlo, revisa sus parámetros y vuelve a ejecutar. Puedes corregirlo sin perder tu progreso. Las salidas de error se muestran en coral.");
-                return;
-            }
+            mentor.AddPlayerMessage("Ejecuté en la terminal:\n" + command);
             TrainingStage review;
-            string label;
             Action next;
             if (Stage == TrainingStage.AccessQuery)
             {
                 LastQueryOutput = "FUENTE: registro local / datos ficticios\n04/02/2016 20:36  LOGIN ACCEPTED\ncuenta: operador.swift   origen: 10.24.3.17\nsegundo_factor: AUSENTE   horario: FUERA DE 08:00–18:00";
                 review = TrainingStage.AccessReview;
-                label = "Señalar acceso de las 20:36";
                 next = StartTransmission;
             }
             else if (Stage == TrainingStage.PaymentQuery)
@@ -467,7 +430,6 @@ namespace AndesSim
                                   "  status: SENT\nórdenes enviadas: " + game.OrdersSent +
                                   "   monto intentado: US$951.000.000\nimpresora de confirmaciones: APAGADA";
                 review = TrainingStage.PaymentReview;
-                label = "Confirmar lectura y cerrar sesión";
                 next = () => { game.AdvanceGuidedTo(game.data.EndTime); Enter(TrainingStage.SessionEnd); };
             }
             else
@@ -475,33 +437,28 @@ namespace AndesSim
                 LastQueryOutput = "FUENTE: SIEM / ejecución protegida actual\n04/02/2016 20:36  ACCESS BLOCKED\ncuenta: operador.swift   segundo_factor: REQUERIDO\nregla: ACCESO FUERA DE 08:00–18:00 → RECHAZAR\nórdenes enviadas: " + game.OrdersSent +
                                   "\nintegridad: VERIFICADA   acceso al registro: RESTRINGIDO";
                 review = TrainingStage.ProtectedReview;
-                label = "Identificar evento y comparar";
                 next = () => Enter(TrainingStage.Comparison);
             }
-            completedQueries.Add(expected);
+            completedQueries.Add(command);
             QueryCount = completedQueries.Count;
-            // Preserve the successful terminal output while changing its explanatory beat.
+            LastQuerySucceeded = true;
             Stage = review;
-            idleTime = 0; hintLevel = 0;
-            string output = LastQueryOutput;
             string explanation = review == TrainingStage.AccessReview
-                ? "La fila de las 20:36 registra operador.swift desde 10.24.3.17: sin segundo factor y fuera de horario. Autenticar una cuenta no prueba que su usuario sea legítimo. Señala el acceso para continuar la reconstrucción."
+                ? "A las 20:36, la cuenta operador.swift inició sesión fuera de horario y sin segundo factor. Reconocer la cuenta no confirma quién la usó."
                 : review == TrainingStage.PaymentReview
-                    ? "Las 36 órdenes salieron aunque la impresora estaba apagada. US$951 millones es el monto intentado, no dinero confirmado como robado. Confirma esta relación para avanzar al cierre de las 03:59."
-                    : "El evento protegido coincide con las 20:36: acceso bloqueado y cero órdenes. La regla rechazó la sesión; el SIEM conservó la evidencia con integridad y acceso restringido. Identifica este evento para comparar tus dos ejecuciones.";
-            currentExplanation = explanation;
+                    ? "La cola confirma 36 envíos. La impresora estaba apagada, pero el envío siguió. US$951 millones es el monto intentado."
+                    : "La regla de horario bloqueó el acceso a las 20:36. El SIEM guardó el evento con integridad verificada y acceso restringido.";
             string interpretationReport = review == TrainingStage.AccessReview
                 ? "Identifiqué la sesión de las 20:36: sin segundo factor y fuera de horario."
                 : review == TrainingStage.PaymentReview
                     ? "Confirmé 36 órdenes enviadas aunque la impresora estaba apagada."
                     : "Identifiqué el evento central de bloqueo a las 20:36, con cero órdenes.";
-            objective = review == TrainingStage.AccessReview ? "Señala la fila del acceso de las 20:36" :
+            objective = review == TrainingStage.AccessReview ? "Identifica el acceso de las 20:36" :
                 review == TrainingStage.PaymentReview ? "Confirma las 36 órdenes con la impresora apagada" :
                 "Identifica el evento protegido de las 20:36";
-            mentor.Show(chapter, objective, explanation, label, Guard(next, interpretationReport), (int)review + 1,
+            mentor.Show(chapter, objective, explanation, "Continuar", Guard(next, interpretationReport), (int)review + 1,
                 Enum.GetValues(typeof(TrainingStage)).Length);
-            mentor.SetTerminalOutput(output, true);
-            mentor.SetActions(label, Guard(next, interpretationReport));
+            mentor.SetTerminalOutput(LastQueryOutput, true);
             cues?.PlayNotice();
             RefreshStatus();
         }
@@ -539,12 +496,11 @@ namespace AndesSim
             attentionTarget = Target(evidence.evidenceId == LogViewer.EvidenceId ? "terminal_swift" : evidence.evidenceId);
             string detail;
             if (evidence.evidenceId == LogViewer.EvidenceId)
-                detail = "REGISTRO LOCAL\n001  20:36 Sesión iniciada\n002–004  [HUECO: entradas borradas]\n005  22:06 Cola: 36 órdenes\n006–007  [HUECO: entradas borradas]\n008  03:59 Sesión cerrada\n\nFaltan entradas numeradas. Guarda la copia y contrástala con otras fuentes; no podemos reconstruir su contenido solo por el salto.";
+                detail = "REGISTRO LOCAL\n001 · 20:36 Inicio de sesión\n005 · 22:06 Cola: 36 órdenes\n008 · 03:59 Cierre de sesión\n\nFaltan las entradas 002–004 y 006–007. El salto revela huecos en el registro. Guarda la copia y contrástala con otras fuentes.";
             else if (evidence.evidenceId == ScenarioData.PrinterEvidenceId)
-                detail = "IMPRESORA APAGADA\n\nEl indicador está apagado y no hay confirmaciones impresas. Sin embargo, la consulta de la cola confirmó 36 envíos. Guarda esta anomalía. El papel es una señal operativa, no un control que impida enviar pagos.";
+                detail = "La impresora está apagada. La cola confirma 36 envíos, aunque no haya comprobantes impresos. Guarda la evidencia.";
             else
-                detail = "SWITCH DE LA RED LOCAL\n\nEste equipo conecta la terminal con la red. Conserva su identificación como contexto de infraestructura. Su apariencia o precio no demuestran una intrusión. Para evaluar segmentación harían falta configuración, rutas y registros de red; ese análisis pertenece a otro escenario.";
-            currentExplanation = detail;
+                detail = "El switch conecta la terminal con la red local. Guarda su identificación como contexto. Para evaluar una intrusión harían falta registros y configuración de red.";
             mentor.SetMessage(detail);
             if (collectedEvidence.Contains(evidence.evidenceId))
                 mentor.SetActions("Ya guardada · seguir investigando", Guard(() => Enter(TrainingStage.Investigate)));
@@ -576,7 +532,7 @@ namespace AndesSim
             var control = controls.FirstOrDefault(value => value.defenseId == id);
             if (control == null || !(control.Activate(game) || game.HasDefense(id)))
             {
-                mentor.SetMessage("No se activó el control. La prueba debe estar en preparación de defensa. Pulsa Nuevo entrenamiento para restaurar el recorrido.");
+                mentor.SetMessage("El control no se pudo activar. Puedes reiniciar el entrenamiento desde Menú.");
                 return;
             }
             mentor.AddPlayerMessage("Activé " + control.Title + " y comprobé su indicador.");
@@ -607,16 +563,17 @@ namespace AndesSim
             {
                 alarm.Silence();
                 mentor.AddPlayerMessage("Silencié la alarma después de comprobar el bloqueo.");
-                mentor.SetMessage("Recibido. La baliza y el registro protegido siguen activos. Puedes continuar con la verificación del evento.");
+                mentor.SetMessage("La alarma se silenció. La baliza y el evento del SIEM siguen activos.");
             }
         }
 
         string InvestigationMessage()
         {
-            string pending = string.Join(", ", new[] { LogViewer.EvidenceId, ScenarioData.PrinterEvidenceId, ScenarioData.SwitchEvidenceId }
-                .Where(id => !collectedEvidence.Contains(id)).Select(id => game.data.GetEvidenceTitle(id)));
-            return "Selecciona un equipo marcado y pulsa «Guardar evidencia» después de revisar mi explicación. Puedes elegir el orden. Cada hallazgo se guarda una sola vez.\n\nEXPEDIENTE: " + collectedEvidence.Count + "/3.\nPor revisar: " + pending + ".";
+            return "Toca cualquiera de los equipos pendientes. Revisa el hallazgo y pulsa «Guardar evidencia».";
         }
+
+        string[] PendingEvidenceTitles() => new[] { LogViewer.EvidenceId, ScenarioData.PrinterEvidenceId, ScenarioData.SwitchEvidenceId }
+            .Where(id => !collectedEvidence.Contains(id)).Select(id => game.data.GetEvidenceTitle(id)).ToArray();
 
         void SetTravelAction()
         {
@@ -635,8 +592,7 @@ namespace AndesSim
             if (exploration.TravelToStation(station))
             {
                 mentor.AddPlayerMessage("Llegué a la estación de " + attentionTarget.title + ".");
-                mentor.SetMessage("Ya estás en la estación. Centra la retícula en " + attentionTarget.title +
-                    " y pulsa Inspeccionar, o toca directamente el equipo. Usa el joystick o el giroscopio para mirar.\n\n" + currentExplanation);
+                mentor.SetMessage("Ya estás en la estación. Toca " + attentionTarget.title + " para continuar.");
             }
         }
 
@@ -652,34 +608,6 @@ namespace AndesSim
         bool IsSpatialStage() => Stage == TrainingStage.Orientation || Stage == TrainingStage.PaymentQuery ||
             Stage == TrainingStage.Investigate || Stage == TrainingStage.PrepareDefense ||
             Stage == TrainingStage.DefenseReady || Stage == TrainingStage.ProtectedQuery;
-
-        void RepeatExplanation()
-        {
-            if (!mentor.IsReadyForAction) return;
-            idleTime = 0;
-            mentor.AddPlayerMessage("¿Puedes repetir la explicación del objetivo actual?");
-            mentor.SetMessage(currentExplanation);
-        }
-
-        void ExplainAction()
-        {
-            if (!mentor.IsReadyForAction) return;
-            idleTime = 0;
-            mentor.AddPlayerMessage("Necesito que me guíes paso a paso para completar esta acción.");
-            bool reviewing = Stage == TrainingStage.AccessReview || Stage == TrainingStage.PaymentReview || Stage == TrainingStage.ProtectedReview;
-            string action = mentor.IsTerminalOpen
-                ? reviewing
-                    ? "La consulta ya se ejecutó. Lee la salida y mi explicación en este chat, y pulsa el botón de confirmación del teléfono para continuar. Puedes volver a la sala y retomar esta misma confirmación desde el teléfono."
-                    : "Pulsa «Usar ejemplo», lee el comando y pulsa «Ejecutar». Revisa la salida y usa el botón de confirmación que aparecerá al obtener el resultado. Si la consulta falla puedes corregirla aquí."
-                : Stage == TrainingStage.Investigate && inspectedEvidence != null
-                    ? "Revisa el hallazgo y pulsa «Guardar evidencia». Después veremos cuál falta."
-                    : IsSpatialStage()
-                        ? "Pulsa «Llévame al objetivo» si necesitas llegar. Orienta la cámara con joystick o giroscopio. Toca el equipo marcado o usa Inspeccionar. Para desplazarte usa teletransporte o Llévame."
-                        : "Lee mi explicación y pulsa el botón de acción visible. No hay una elección secreta ni penalización: cada paso te muestra lo que vamos a comprobar.";
-            mentor.SetMessage(mentor.IsTerminalOpen
-                ? "GUÍA DE LA ACCIÓN\n" + action + "\n\n" + (reviewing ? currentExplanation : mentor.OriginalTerminalExplanation)
-                : currentExplanation + "\n\nGUÍA DE LA ACCIÓN\n" + action);
-        }
 
         void RefreshStatus()
         {
@@ -708,13 +636,11 @@ namespace AndesSim
             if (visible)
             {
                 marker.transform.position = attentionTarget.AimPosition + Vector3.up * (1.15f + .04f * Mathf.Sin(Time.unscaledTime * 2));
-                marker.transform.rotation = Quaternion.LookRotation(marker.transform.position - exploration.viewCamera.transform.position);
-                marker.text = "▼ OBJETIVO\n" + attentionTarget.title;
+                var fromCamera = marker.transform.position - exploration.viewCamera.transform.position;
+                marker.transform.rotation = Quaternion.LookRotation(fromCamera);
+                marker.transform.localScale = Vector3.one * Mathf.Clamp(fromCamera.magnitude * .13f, .25f, 1f);
+                marker.text = "▼ " + attentionTarget.title;
             }
-            var looked = exploration.CurrentTarget;
-            mentor.SetWorldHint(mentor.IsTerminalOpen ? "CONSOLA DE ENTRENAMIENTO · comandos internos, datos ficticios" :
-                looked != null ? (looked.kind == ExplorationTarget.Kind.Inspection ? "TOCA · INSPECCIONAR " : "TOCA · IR A ") + looked.title :
-                "Cámara: joystick o giroscopio · Toca un equipo o usa Inspeccionar");
         }
 
         void SetSimulatorInputSuspended(bool suspended)

@@ -1,11 +1,13 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.UI;
+using FingerTouch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
 namespace AndesSim
 {
-    /// <summary>Single-screen Android training: touch interaction and sensor-relative camera.</summary>
     [DefaultExecutionOrder(-500)]
     public sealed class MobileExperience : MonoBehaviour
     {
@@ -13,26 +15,35 @@ namespace AndesSim
         public static MobileExperience Instance { get; private set; }
         public bool GyroscopeMode { get; private set; }
         public bool HasGyroscope => AttitudeSensor.current != null;
+
+        const int MousePointer = -1;
+        const int NoPointer = -2;
+        readonly List<RaycastResult> uiHits = new List<RaycastResult>();
+        PointerEventData uiProbe;
         TrainingDirector director;
         ExplorationController explorer;
         MentorPresenter mentor;
         Camera cameraView;
-        GameObject menu, settings, controls, worldActions;
-        MobileLookStick stick;
+        GameObject menu, settings, controls, historyButton, restartButton, recenterButton;
         Text sensorStatus, playLabel;
+        RectTransform safeArea, menuSafeArea;
         Quaternion lastView, sensorZero, viewZero;
-        bool started, sensorCalibrated;
+        bool started, sensorCalibrated, dragging, touchEnabled;
         float yaw, pitch;
+        int pointer = NoPointer;
+        Vector2 pressPosition, lastPosition;
         Font font;
 
         void Awake()
         {
-            Instance = this; IsPaused = true;
+            Instance = this;
+            IsPaused = true;
             director = GetComponent<TrainingDirector>();
             mentor = GetComponent<MentorPresenter>();
             explorer = FindAnyObjectByType<ExplorationController>();
             cameraView = explorer.viewCamera != null ? explorer.viewCamera : Camera.main;
-            director.enabled = false; explorer.enabled = false;
+            director.enabled = false;
+            explorer.enabled = false;
             var legacyUI = GetComponent<UIManager>();
             if (legacyUI != null) legacyUI.enabled = false;
             foreach (var simulator in FindObjectsByType<UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator>())
@@ -48,79 +59,234 @@ namespace AndesSim
             AudioListener.volume = PlayerPrefs.GetFloat("Andes.Volume", .75f);
             Application.targetFrameRate = 60;
             Screen.orientation = ScreenOrientation.LandscapeLeft;
-            lastView = cameraView.transform.rotation;
-            yaw = lastView.eulerAngles.y;
+            ReadView();
+        }
+
+        void OnEnable()
+        {
+            EnhancedTouchSupport.Enable();
+            touchEnabled = true;
         }
 
         void Start()
         {
             mentor.Root.gameObject.SetActive(false);
             BuildUI();
+            mentor.HistoryClosed += ReturnFromHistory;
             SelectCamera(PlayerPrefs.GetInt("Andes.Gyroscope", 0) == 1);
+        }
+
+        void Update()
+        {
+            if (!CanLook())
+            {
+                CancelGesture();
+                return;
+            }
+
+            var touches = FingerTouch.activeTouches;
+            if (touches.Count > 0 || pointer >= 0)
+            {
+                if (pointer == MousePointer) CancelGesture();
+                if (pointer == NoPointer)
+                {
+                    // A second finger cannot take over an existing gesture.
+                    if (touches.Count == 1 && touches[0].phase == UnityEngine.InputSystem.TouchPhase.Began)
+                        BeginGesture(touches[0].finger.index, touches[0].screenPosition);
+                    return;
+                }
+
+                foreach (var touch in touches)
+                {
+                    if (touch.finger.index != pointer) continue;
+                    if (touch.phase == UnityEngine.InputSystem.TouchPhase.Ended) EndGesture(touch.screenPosition);
+                    else if (touch.phase == UnityEngine.InputSystem.TouchPhase.Canceled) CancelGesture();
+                    else MoveGesture(touch.screenPosition);
+                    return;
+                }
+                CancelGesture();
+                return;
+            }
+
+#if UNITY_EDITOR
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+            var position = mouse.position.ReadValue();
+            if (mouse.leftButton.wasPressedThisFrame) BeginGesture(MousePointer, position);
+            if (pointer != MousePointer) return;
+            if (mouse.leftButton.wasReleasedThisFrame) EndGesture(position);
+            else if (mouse.leftButton.isPressed) MoveGesture(position);
+            else CancelGesture();
+#endif
+        }
+
+        bool CanLook() => started && !IsPaused && !mentor.BlocksWorldInput && !explorer.PanelVisible;
+
+        void BeginGesture(int id, Vector2 position)
+        {
+            if (HitsInterface(position)) return;
+            pointer = id;
+            pressPosition = lastPosition = position;
+            dragging = false;
+            SyncExternalView();
+        }
+
+        void MoveGesture(Vector2 position)
+        {
+            var scale = Mathf.Max(1f, Mathf.Min(Screen.width, Screen.height));
+            if (!dragging)
+            {
+                float threshold = Mathf.Max(5f, scale * .012f);
+                if ((position - pressPosition).sqrMagnitude < threshold * threshold) return;
+                dragging = true;
+            }
+            var delta = position - lastPosition;
+            lastPosition = position;
+            if (GyroscopeMode || delta == Vector2.zero) return;
+            SyncExternalView();
+            yaw = Mathf.Repeat(yaw + delta.x * 145f / scale, 360f);
+            pitch = Mathf.Clamp(pitch - delta.y * 120f / scale, -80f, 80f);
+            ApplyView();
+        }
+
+        void EndGesture(Vector2 position)
+        {
+            MoveGesture(position);
+            bool select = !dragging && mentor.IsReadyForAction && !HitsInterface(position);
+            CancelGesture();
+            if (select) explorer.SelectAtScreenPoint(position);
+        }
+
+        void CancelGesture()
+        {
+            pointer = NoPointer;
+            dragging = false;
+        }
+
+        bool HitsInterface(Vector2 position)
+        {
+            if (mentor.IsScreenPointOverUI(position) || !Screen.safeArea.Contains(position)) return true;
+            var events = EventSystem.current;
+            if (events == null) return false;
+            if (uiProbe == null) uiProbe = new PointerEventData(events);
+            uiProbe.position = position;
+            events.RaycastAll(uiProbe, uiHits);
+            bool hit = uiHits.Count > 0;
+            uiHits.Clear();
+            return hit;
         }
 
         void LateUpdate()
         {
-            if (worldActions != null) worldActions.SetActive(!IsPaused && !mentor.IsTerminalOpen);
-            if (IsPaused || !started || mentor.IsTerminalOpen) return;
-            if (Quaternion.Angle(lastView, cameraView.transform.rotation) > .1f)
+            if (safeArea != null) FitSafeArea(safeArea);
+            if (menuSafeArea != null) FitSafeArea(menuSafeArea);
+            if (recenterButton != null)
+                recenterButton.SetActive(GyroscopeMode && !mentor.BlocksWorldInput);
+            if (!CanLook())
             {
-                yaw = cameraView.transform.eulerAngles.y;
-                pitch = Mathf.DeltaAngle(0, cameraView.transform.eulerAngles.x);
                 sensorCalibrated = false;
+                return;
             }
-            if (GyroscopeMode && HasGyroscope)
+            SyncExternalView();
+            if (!GyroscopeMode) return;
+            if (!HasGyroscope)
             {
-                Quaternion sensor = ConvertAttitude(AttitudeSensor.current.attitude.ReadValue());
-                if (!sensorCalibrated) { sensorZero = sensor; viewZero = cameraView.transform.rotation; sensorCalibrated = true; }
-                var rotation = viewZero * Quaternion.Inverse(sensorZero) * sensor;
-                yaw = rotation.eulerAngles.y;
-                pitch = Mathf.Clamp(Mathf.DeltaAngle(0, rotation.eulerAngles.x), -80, 80);
+                SelectCamera(true);
+                return;
             }
-            else
+
+            Quaternion sensor = AttitudeSensor.current.attitude.ReadValue();
+            sensor = new Quaternion(sensor.x, sensor.y, -sensor.z, -sensor.w);
+            if (Quaternion.Dot(sensor, sensor) < .5f) return;
+            if (!sensorCalibrated)
             {
-                yaw += stick.Value.x * 95 * Time.unscaledDeltaTime;
-                pitch = Mathf.Clamp(pitch - stick.Value.y * 75 * Time.unscaledDeltaTime, -80, 80);
+                sensorZero = sensor;
+                viewZero = lastView;
+                sensorCalibrated = true;
             }
-            cameraView.transform.rotation = Quaternion.Euler(pitch, yaw, 0);
-            lastView = cameraView.transform.rotation;
-            stick.gameObject.SetActive(!GyroscopeMode);
+            var rotation = viewZero * Quaternion.Inverse(sensorZero) * sensor;
+            yaw = rotation.eulerAngles.y;
+            pitch = Mathf.Clamp(Mathf.DeltaAngle(0, rotation.eulerAngles.x), -80f, 80f);
+            ApplyView();
         }
 
-        static Quaternion ConvertAttitude(Quaternion value) => new Quaternion(value.x, value.y, -value.z, -value.w);
+        void SyncExternalView()
+        {
+            if (Quaternion.Angle(lastView, cameraView.transform.rotation) <= .1f) return;
+            ReadView();
+            sensorCalibrated = false;
+        }
+
+        void ReadView()
+        {
+            lastView = cameraView.transform.rotation;
+            yaw = lastView.eulerAngles.y;
+            pitch = Mathf.DeltaAngle(0, lastView.eulerAngles.x);
+        }
+
+        void ApplyView()
+        {
+            lastView = Quaternion.Euler(pitch, yaw, 0);
+            cameraView.transform.rotation = lastView;
+        }
 
         public void SelectCamera(bool gyro)
         {
+            CancelGesture();
             if (gyro && HasGyroscope) InputSystem.EnableDevice(AttitudeSensor.current);
             GyroscopeMode = gyro && HasGyroscope;
             sensorCalibrated = false;
-            PlayerPrefs.SetInt("Andes.Gyroscope", GyroscopeMode ? 1 : 0);
+            PlayerPrefs.SetInt("Andes.Gyroscope", gyro ? 1 : 0);
             PlayerPrefs.Save();
-            if (sensorStatus != null) sensorStatus.text = gyro && !HasGyroscope
-                ? "Este dispositivo no ofrece giroscopio. Se utiliza joystick."
-                : GyroscopeMode ? "Cámara: GIROSCOPIO · orientación relativa, sin inclinación lateral."
-                : "Cámara: JOYSTICK · arrastra el círculo para mirar.";
-            if (stick != null) { stick.ResetStick(); stick.gameObject.SetActive(!GyroscopeMode); }
+            if (sensorStatus == null) return;
+            sensorStatus.text = gyro && !HasGyroscope
+                ? "El sensor no está disponible. Puedes mirar arrastrando sobre la sala."
+                : GyroscopeMode ? "Giroscopio activo. Mueve el teléfono para mirar."
+                : "Arrastre activo. Desliza sobre la sala para mirar.";
         }
 
         public void BeginOrResume()
         {
-            IsPaused = false; menu.SetActive(false); settings.SetActive(false);
-            mentor.Root.gameObject.SetActive(true); controls.SetActive(true);
-            if (!started) { explorer.enabled = true; director.enabled = true; started = true; playLabel.text = "Continuar entrenamiento"; }
+            CancelGesture();
+            IsPaused = false;
+            menu.SetActive(false);
+            settings.SetActive(false);
+            mentor.Root.gameObject.SetActive(true);
+            controls.SetActive(true);
+            if (!started)
+            {
+                explorer.enabled = true;
+                director.enabled = true;
+                started = true;
+                playLabel.text = "Continuar entrenamiento";
+                historyButton.SetActive(true);
+                restartButton.SetActive(true);
+            }
             sensorCalibrated = false;
         }
 
         void OpenMenu(bool configuration)
         {
-            IsPaused = true; stick.ResetStick(); controls.SetActive(false);
-            menu.SetActive(!configuration); settings.SetActive(configuration);
+            CancelGesture();
+            IsPaused = true;
+            mentor.ClearUISelection();
+            controls.SetActive(false);
+            menu.SetActive(!configuration);
+            settings.SetActive(configuration);
         }
 
-        void Interact()
+        void OpenHistory()
         {
-            if (IsPaused || mentor.BlocksWorldInput || !mentor.IsReadyForAction) return;
-            explorer.RefreshGaze(); explorer.ActivateCurrentTarget();
+            menu.SetActive(false);
+            mentor.SetHistoryVisible(true);
+        }
+
+        void ReturnFromHistory() => OpenMenu(false);
+
+        void RestartTraining()
+        {
+            BeginOrResume();
+            mentor.RequestRestart();
         }
 
         void BuildUI()
@@ -128,75 +294,149 @@ namespace AndesSim
             font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             var root = new GameObject("Mobile_Controls", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             root.transform.SetParent(transform, false);
-            var canvas = root.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 600;
-            var scaler = root.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720); scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+            var canvas = root.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 600;
+            var scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1280, 720);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             if (EventSystem.current == null)
                 new GameObject("Mobile_EventSystem", typeof(EventSystem), typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
-            controls = Panel(root.transform, "TouchControls", Color.clear).gameObject;
-            Button(controls.transform, "Menú", new Vector2(600, -35), new Vector2(130, 48), () => OpenMenu(false));
-            Button(controls.transform, "Ajustes", new Vector2(750, -35), new Vector2(130, 48), () => OpenMenu(true));
-            worldActions = Panel(controls.transform,"WorldTouchActions",Color.clear).gameObject;
-            var look = Panel(worldActions.transform, "CameraJoystick", new Color(.03f, .18f, .22f, .9f));
-            look.anchorMin = look.anchorMax = new Vector2(0, 0); look.pivot = new Vector2(.5f,.5f);
-            look.anchoredPosition = new Vector2(110, 120); look.sizeDelta = new Vector2(160,160);
-            look.GetComponent<Image>().raycastTarget = true;
-            stick = look.gameObject.AddComponent<MobileLookStick>();
-            var knob = Panel(look, "JoystickHandle", new Color(.3f,.85f,.85f)); knob.sizeDelta = new Vector2(58,58);
-            knob.anchorMin = knob.anchorMax = new Vector2(.5f,.5f); knob.anchoredPosition = Vector2.zero;
-            stick.Handle = knob;
-            Button(worldActions.transform, "Inspeccionar", new Vector2(295, -625), new Vector2(175,60), Interact);
-            Button(worldActions.transform, "Recentrar cámara", new Vector2(500,-625), new Vector2(195,60), () => { sensorCalibrated = false; });
+
+            menuSafeArea = Panel(root.transform, "MenuSafeArea", Color.clear);
+            safeArea = Panel(root.transform, "SafeArea", Color.clear);
+            FitSafeArea(safeArea);
+            controls = Panel(safeArea, "TouchControls", Color.clear).gameObject;
+            var controlPanel = controls.GetComponent<RectTransform>();
+            Button(controlPanel, "Menú", Vector2.one, new Vector2(-177, -37), new Vector2(94, 48), () => OpenMenu(false));
+            Button(controlPanel, "Ajustes", Vector2.one, new Vector2(-68, -37), new Vector2(104, 48), () => OpenMenu(true));
+            recenterButton = Button(controlPanel, "Recentrar cámara", Vector2.one, new Vector2(-94, -94),
+                new Vector2(164, 46), () => sensorCalibrated = false).gameObject;
             controls.SetActive(false);
-            menu = Panel(root.transform, "MainMenu", new Color(.01f,.03f,.045f,1)).gameObject;
-            Label(menu.transform,"ANDES-SIM\nCENTRO DE DATOS",new Vector2(640,-155),new Vector2(1000,160),42);
-            Label(menu.transform,"Entrena con Elliot Alderson. Investiga el incidente y prueba las defensas.\nControles táctiles · Navegación por teletransporte",new Vector2(640,-300),new Vector2(1000,95),22);
-            playLabel = Button(menu.transform,"Comenzar entrenamiento",new Vector2(640,-410),new Vector2(480,65),BeginOrResume).GetComponentInChildren<Text>();
-            Button(menu.transform,"Configuración",new Vector2(640,-490),new Vector2(480,60),()=>OpenMenu(true));
-            Button(menu.transform,"Salir",new Vector2(640,-565),new Vector2(480,55),Application.Quit);
-            settings = Panel(root.transform,"Settings",new Color(.01f,.03f,.045f,1)).gameObject;
-            Label(settings.transform,"CONFIGURACIÓN",new Vector2(640,-100),new Vector2(1000,70),34);
-            Label(settings.transform,"Volumen general",new Vector2(640,-195),new Vector2(700,40),23);
-            var sliderRect = Panel(settings.transform,"VolumeSlider",new Color(.15f,.25f,.3f));
-            sliderRect.anchorMin=sliderRect.anchorMax=new Vector2(0,1); sliderRect.anchoredPosition=new Vector2(640,-255); sliderRect.sizeDelta=new Vector2(550,40);
-            sliderRect.GetComponent<Image>().raycastTarget=true;
-            var handle=Panel(sliderRect,"Handle",new Color(.3f,1,.8f)); handle.sizeDelta=new Vector2(35,50);
-            var slider=sliderRect.gameObject.AddComponent<Slider>(); slider.handleRect=handle; slider.targetGraphic=handle.GetComponent<Image>(); slider.value=AudioListener.volume;
-            slider.onValueChanged.AddListener(value=> { AudioListener.volume=value; PlayerPrefs.SetFloat("Andes.Volume",value); PlayerPrefs.Save(); });
-            Button(settings.transform,"Cámara por joystick",new Vector2(440,-365),new Vector2(360,65),()=>SelectCamera(false));
-            Button(settings.transform,"Cámara por giroscopio",new Vector2(840,-365),new Vector2(360,65),()=>SelectCamera(true));
-            sensorStatus=Label(settings.transform,"",new Vector2(640,-450),new Vector2(1050,75),21);
-            Button(settings.transform,"Volver",new Vector2(640,-560),new Vector2(420,65),()=> { if(started) BeginOrResume(); else OpenMenu(false); });
+
+            FitSafeArea(menuSafeArea);
+            menu = Panel(menuSafeArea, "MainMenu", new Color(.018f, .034f, .049f)).gameObject;
+            var center = new Vector2(.5f, .5f);
+            Label(menu.transform, "ANDES-SIM\nCENTRO DE DATOS", center, new Vector2(0, 205), new Vector2(710, 112), 42);
+            Label(menu.transform, "Investiga el incidente junto a Elliot Alderson y comprueba las defensas.",
+                center, new Vector2(0, 126), new Vector2(820, 60), 23);
+            playLabel = Button(menu.transform, "Comenzar entrenamiento", center, new Vector2(0, 45),
+                new Vector2(410, 59), BeginOrResume).GetComponentInChildren<Text>();
+            Button(menu.transform, "Configuración", center, new Vector2(0, -20), new Vector2(410, 54), () => OpenMenu(true));
+            historyButton = Button(menu.transform, "Historial", center, new Vector2(0, -81), new Vector2(410, 52), OpenHistory).gameObject;
+            restartButton = Button(menu.transform, "Reiniciar entrenamiento", center, new Vector2(0, -139),
+                new Vector2(410, 52), RestartTraining).gameObject;
+            Button(menu.transform, "Salir", center, new Vector2(0, -203), new Vector2(410, 52), Application.Quit);
+            historyButton.SetActive(false);
+            restartButton.SetActive(false);
+
+            settings = Panel(menuSafeArea, "Settings", new Color(.018f, .034f, .049f)).gameObject;
+            Label(settings.transform, "Configuración", center, new Vector2(0, 195), new Vector2(640, 72), 34);
+            Label(settings.transform, "Volumen general", center, new Vector2(0, 108), new Vector2(500, 44), 23);
+            var sliderRect = Panel(settings.transform, "VolumeSlider", new Color(.15f, .25f, .3f));
+            Place(sliderRect, center, new Vector2(0, 52), new Vector2(520, 45));
+            var handle = Panel(sliderRect, "Handle", new Color(.3f, 1, .8f));
+            Place(handle, center, Vector2.zero, new Vector2(35, 50));
+            var slider = sliderRect.gameObject.AddComponent<Slider>();
+            slider.handleRect = handle;
+            slider.targetGraphic = handle.GetComponent<Image>();
+            slider.value = AudioListener.volume;
+            slider.onValueChanged.AddListener(value =>
+            {
+                AudioListener.volume = value;
+                PlayerPrefs.SetFloat("Andes.Volume", value);
+                PlayerPrefs.Save();
+            });
+            Button(settings.transform, "Arrastre", center, new Vector2(-155, -38), new Vector2(285, 60), () => SelectCamera(false));
+            Button(settings.transform, "Giroscopio", center, new Vector2(155, -38), new Vector2(285, 60), () => SelectCamera(true));
+            sensorStatus = Label(settings.transform, "", center, new Vector2(0, -114), new Vector2(760, 70), 21);
+            Button(settings.transform, "Volver", center, new Vector2(0, -194), new Vector2(410, 56),
+                () => { if (started) BeginOrResume(); else OpenMenu(false); });
             settings.SetActive(false);
         }
 
-        RectTransform Panel(Transform parent,string name,Color color)
+        internal static void FitSafeArea(RectTransform rect)
         {
-            var obj=new GameObject(name,typeof(RectTransform),typeof(Image)); obj.transform.SetParent(parent,false);
-            var r=obj.GetComponent<RectTransform>(); r.anchorMin=Vector2.zero; r.anchorMax=Vector2.one; r.offsetMin=r.offsetMax=Vector2.zero;
-            obj.GetComponent<Image>().color=color; obj.GetComponent<Image>().raycastTarget=color.a>.95f; return r;
+            if (Screen.width <= 0 || Screen.height <= 0) return;
+            var area = Screen.safeArea;
+            rect.anchorMin = new Vector2(area.xMin / Screen.width, area.yMin / Screen.height);
+            rect.anchorMax = new Vector2(area.xMax / Screen.width, area.yMax / Screen.height);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
-        Text Label(Transform parent,string text,Vector2 position,Vector2 size,int fontSize)
+
+        static RectTransform Panel(Transform parent, string name, Color color)
         {
-            var obj=new GameObject("Text",typeof(RectTransform),typeof(Text)); obj.transform.SetParent(parent,false);
-            var r=obj.GetComponent<RectTransform>(); r.anchorMin=r.anchorMax=new Vector2(0,1); r.anchoredPosition=position; r.sizeDelta=size;
-            var t=obj.GetComponent<Text>(); t.font=font; t.text=text; t.fontSize=fontSize; t.alignment=TextAnchor.MiddleCenter; t.color=Color.white; t.raycastTarget=false; return t;
+            var panel = new GameObject(name, typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(parent, false);
+            var rect = panel.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            var image = panel.GetComponent<Image>();
+            image.color = color;
+            image.raycastTarget = color.a > .95f;
+            return rect;
         }
-        Button Button(Transform parent,string caption,Vector2 position,Vector2 size,UnityEngine.Events.UnityAction action)
+
+        static void Place(RectTransform rect, Vector2 anchor, Vector2 position, Vector2 size)
         {
-            var r=Panel(parent,caption,new Color(.04f,.25f,.23f)); r.anchorMin=r.anchorMax=new Vector2(0,1); r.anchoredPosition=position; r.sizeDelta=size; r.GetComponent<Image>().raycastTarget=true;
-            var b=r.gameObject.AddComponent<Button>(); b.targetGraphic=r.GetComponent<Image>(); b.onClick.AddListener(action);
-            var text=Label(r,caption,Vector2.zero,size-Vector2.one*12,21); text.rectTransform.anchorMin=text.rectTransform.anchorMax=new Vector2(.5f,.5f); return b;
+            rect.anchorMin = rect.anchorMax = anchor;
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
         }
-        void OnDestroy() { if(Instance==this) { Instance=null; IsPaused=false; } }
-    }
-    public sealed class MobileLookStick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
-    {
-        public RectTransform Handle;
-        public Vector2 Value { get; private set; }
-        public void OnPointerDown(PointerEventData e)=>OnDrag(e);
-        public void OnDrag(PointerEventData e) { RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)transform,e.position,e.pressEventCamera,out var point); Value=Vector2.ClampMagnitude(point/70f,1); Handle.anchoredPosition=Value*48; }
-        public void OnPointerUp(PointerEventData e)=>ResetStick();
-        public void ResetStick() { Value=Vector2.zero; if(Handle!=null) Handle.anchoredPosition=Vector2.zero; }
+
+        Text Label(Transform parent, string caption, Vector2 anchor, Vector2 position, Vector2 size, int fontSize)
+        {
+            var obj = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            obj.transform.SetParent(parent, false);
+            Place(obj.GetComponent<RectTransform>(), anchor, position, size);
+            var label = obj.GetComponent<Text>();
+            label.font = font;
+            label.text = caption;
+            label.fontSize = fontSize;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.color = Color.white;
+            label.raycastTarget = false;
+            return label;
+        }
+
+        Button Button(Transform parent, string caption, Vector2 anchor, Vector2 position, Vector2 size, UnityEngine.Events.UnityAction action)
+        {
+            var rect = Panel(parent, caption, new Color(.055f, .23f, .22f));
+            Place(rect, anchor, position, size);
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = rect.GetComponent<Image>();
+            button.onClick.AddListener(action);
+            Label(rect, caption, new Vector2(.5f, .5f), Vector2.zero, size - Vector2.one * 10, 19);
+            return button;
+        }
+
+        void OnApplicationFocus(bool focused)
+        {
+            if (focused) return;
+            CancelGesture();
+            sensorCalibrated = false;
+        }
+
+        void OnApplicationPause(bool paused)
+        {
+            if (paused) OnApplicationFocus(false);
+        }
+
+        void OnDisable()
+        {
+            CancelGesture();
+            if (touchEnabled) EnhancedTouchSupport.Disable();
+            touchEnabled = false;
+        }
+
+        void OnDestroy()
+        {
+            if (mentor != null) mentor.HistoryClosed -= ReturnFromHistory;
+            if (Instance != this) return;
+            Instance = null;
+            IsPaused = false;
+        }
     }
 }

@@ -1,39 +1,30 @@
 # ANDES-SIM · Android táctil
 
-La escena DataCenter_VR inicia con un menú para comenzar, configurar o salir. La configuración permite ajustar el volumen general y alternar entre cámara por joystick y giroscopio. Las preferencias se guardan en el dispositivo. El recorrido y sus explicaciones se conservan en el teléfono de Elliot.
+La escena DataCenter_VR abre con un menú para comenzar, configurar o salir. Durante el entrenamiento, el objetivo activo está arriba a la izquierda y se actualiza al validar cada paso. Las evidencias guardadas salen de la lista de pendientes.
 
 ## Controles
 
-- Arrastra el joystick de la izquierda para orientar la cámara.
-- En modo giroscopio, mueve el teléfono para mirar. **Recentrar cámara** toma la orientación actual como referencia. Si no hay sensor, el juego informa y mantiene el joystick.
-- Toca directamente un equipo para inspeccionarlo, o céntralo en la retícula y pulsa **Inspeccionar**.
-- Desplázate tocando los destinos de teletransporte o usando **Llévame** en el chat.
-- **Ajustes** y **Menú** pausan el recorrido; al continuar se conserva la tarea.
-- No hay desplazamiento libre por teclado. El simulador XR está desactivado en la escena y el control de cámara se realiza con `MobileExperience`.
-- La animación de escritura del chat dura 1,2 segundos por mensaje. Las secuencias **Siguiente → Ok** y el historial siguen disponibles.
+- Arrastra un dedo sobre la sala para orientar la cámara. Toca un equipo o destino de teletransporte y suelta para seleccionarlo. En el Editor, el ratón funciona igual.
+- En **Ajustes**, se puede cambiar a **Giroscopio**. Mueve el teléfono para mirar y usa **Recentrar cámara** para tomar la orientación actual como referencia. Si falta el sensor, el juego mantiene el arrastre. También se puede ajustar el volumen.
+- **Llévame al objetivo** lleva a la estación correspondiente. El marcador verde indica el equipo que debes tocar.
+- Elliot muestra una sección breve a la vez. Si quedan más, **Continuar** registra **Ok** y entrega la siguiente con animación y sonido. Al terminar aparece la acción del objetivo.
+- **Menú** y **Ajustes** pausan el recorrido. **Menú → Historial** permite releer la conversación de la sesión.
+- La terminal se abre encima del diálogo como una pantalla con un comando de solo lectura y la salida de la consulta. **Ejecutar** se habilita cuando Elliot entrega la instrucción. **Continuar** cierra la pantalla después de revisar el resultado. La pausa conserva el punto de la consulta.
 
-## Compilar
+## Compilar y verificar
 
-Menú del Editor: **Andes-Sim > Android > Preparar y generar APK**. Genera `Build/ANDES-SIM.apk` y `Build/BuildResult.json`. Configura ARM64, IL2CPP, OpenGLES3, orientación horizontal y API mínima 26. La versión es monoscópica táctil y no requiere un visor XR. Los proveedores XR de Android se desactivan para esta entrega.
+Usa **Andes-Sim > Android > Preparar y generar APK**. El APK queda en `Build/ANDES-SIM.apk` y su informe en `Build/BuildResult.json`, ambos en la raíz del proyecto. La configuración usa Android horizontal, ARM64, IL2CPP, OpenGLES3 y API mínima 26. El juego utiliza la pantalla del teléfono.
 
-## Verificación realizada
+El menú **Andes-Sim > Android > Validar diálogo y recorrido táctil** usa entradas sintéticas del Input System en el Editor. Deja el informe y las capturas 16:9 y 20:9 en `Build/Validacion_Movil/`. Comprueba el arrastre, el toque, las secciones y el bloqueo de **Ejecutar**, la pausa y el reinicio durante una consulta y el cierre de **36 órdenes frente a 0**.
 
-Se revisaron el arranque desde el menú, la apertura de ajustes, el cambio de volumen (valor observado 0,42), el arranque del entrenamiento y la ausencia del simulador de movimiento libre activo. En el Editor sin sensor se comprobó la alternativa automática al joystick. Una entrada sintética mediante los handlers de puntero del joystick produjo giro de cámara; el resultado está en `Docs/Evidencias_Android/JoystickCheck.json`.
+Los archivos de `Docs/Evidencias_Android/` corresponden a la primera entrega móvil. Los informes del APK vigente, su huella y la comprobación de la firma se guardan en `Build/`.
 
-Las capturas del menú, los ajustes y el juego están en `Docs/Evidencias_Android/`. Estas comprobaciones del Editor no sustituyen una prueba física multitáctil ni la calibración del giroscopio en un teléfono Android. No se ha realizado una prueba en un teléfono físico durante esta entrega.
+Consulta `Build/BuildResult.json` para el resultado de Unity, `Build/APK_Signature.txt` para la firma y `Build/APK_Metadata.txt` para el paquete, la arquitectura y los niveles de API del APK.
 
-Se verificó también que una entrada W/E/Q mediante Input System no desplaza la cámara (`KeyboardRemovedCheck.json`, distancia observada 0). El recorrido llegó a la terminal mediante Llévame y la selección por punto de pantalla abrió AccessQuery. Una comprobación del chat durante ajustes conservó el mensaje sin entregarlo y lo reanudó al volver (`PauseCheck.json`: ambos resultados verdaderos). Las acciones de menú y del recorrido se comprobaron mediante callbacks de botones y handlers del Editor; no se presentan como una prueba multitáctil sobre hardware.
+La terminal usa Roboto Mono. La licencia que acompaña a la fuente está en `Assets/AndesSim/Art/Resources/RobotoMono-LICENSE.txt`.
 
-El resultado de compilación y el tamaño real del APK se registran en `Build/BuildResult.json`.
+## Retrato
 
-## APK entregado
+La ilustración de Elliot se generó con la herramienta integrada de OpenAI. El juego la muestra en un círculo a la izquierda del diálogo. [Archivo del retrato](../Assets/AndesSim/Art/Resources/ElliotPortrait.png)
 
-- Archivo: `Build/ANDES-SIM.apk`, **39.189.271 bytes** (39,2 MB).
-- Resultado confirmado con el informe nativo de Unity: **Succeeded**, cero errores. Hay cuatro advertencias de TextMesh Pro: una directiva de shader obsoleta y tres avisos de distribución del código C++ generado.
-- Firma comprobada con `apksigner verify`: válida, esquema APK v2, un firmante.
-- Metadatos comprobados con `aapt`: paquete `com.andessim.datacenter`, versión 1.0, Android mínimo API 26, objetivo API 36 y arquitectura `arm64-v8a`. No exige un visor XR.
-- Huella del archivo en `Build/SHA256.txt`; metadatos en `Docs/Evidencias_Android/APK_Metadata.txt`.
-
-Para instalar, copia el APK a un teléfono Android ARM64 con Android 8 o posterior, ábrelo desde el administrador de archivos y completa el diálogo de instalación. Inicia en horizontal. Las opciones de cámara y volumen se encuentran en Configuración/Ajustes.
-
-El campo `bytes` del informe de Unity corresponde a su tamaño total de construcción, no al tamaño comprimido del APK indicado arriba.
+> Create a single original square digital illustration for a tiny circular dialogue avatar in the Unity game ANDES-SIM. Subject: Elliot Alderson as portrayed by Rami Malek in the television series Mr. Robot, a quiet serious young cybersecurity engineer in a black hoodie. Painterly graphic novel portrait with clean restrained detail, high readability at 80 px, centered head and shoulders with whole face comfortably inside the central 68% square, head slightly turned toward the viewer, calm attentive expression. Soft cool navy background with a faint teal rim light, natural subdued skin tones, face bright and easy to distinguish. Full bleed square, no frame, no border, no text, no logo. Original artwork, not an existing still or screenshot.

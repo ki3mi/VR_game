@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -16,10 +15,8 @@ namespace AndesSim
     [DisallowMultipleComponent]
     public sealed class MentorPresenter : MonoBehaviour
     {
-        public event Action HelpRequested;
-        public event Action RepeatRequested;
         public event Action RestartRequested;
-        public event Action TerminalClosed;
+        public event Action HistoryClosed;
 
         public string MentorDisplayName => "Elliot Alderson";
         public bool IsTerminalOpen => terminalPanel != null && terminalPanel.gameObject.activeSelf;
@@ -28,19 +25,22 @@ namespace AndesSim
         public int NextAcknowledgementCount { get; private set; }
         public int PendingMessageCount => incoming.Count + (IsMentorTyping ? 1 : 0);
         public bool IsReadyForAction => built && !IsMentorTyping && !AwaitingNextMessage && incoming.Count == 0;
-        public bool IsTyping => commandInput != null && commandInput.isFocused;
-        public bool IsReading => modal || IsTerminalOpen || confirmingRestart;
-        public bool BlocksWorldInput => IsReading || IsTyping;
+        public bool CanExecuteQuery => IsTerminalOpen && runCommand != null && executeAuthorized && IsReadyForAction &&
+            !MobileExperience.IsPaused && !confirmingRestart;
+        public bool IsReading => modal || IsTerminalOpen || confirmingRestart || IsHistoryOpen;
+        public bool BlocksWorldInput => IsReading;
         public bool PointerOverUI
         {
             get
             {
                 if (root == null || !root.gameObject.activeInHierarchy) return false;
                 Vector2 pointer = Mouse.current != null ? Mouse.current.position.ReadValue() : new Vector2(Screen.width * .5f, Screen.height * .5f);
-                return Contains(phone, pointer) || Contains(terminalPanel, pointer);
+                return IsScreenPointOverUI(pointer);
             }
         }
-        public bool IsScreenPointOverUI(Vector2 point) => Contains(phone, point) || Contains(terminalPanel, point);
+        public bool IsHistoryOpen => historyPanel != null && historyPanel.gameObject.activeSelf;
+        public bool IsScreenPointOverUI(Vector2 point) => Contains(dialogue, point) || Contains(objectives, point) ||
+            Contains(terminalPanel, point) || Contains(historyPanel, point) || Contains(restartPanel, point);
         public int ChatMessageCount => history.Count;
         public int MessageCount => history.Count;
         public int PlayerMessageCount { get; private set; }
@@ -52,17 +52,12 @@ namespace AndesSim
         public string ChatHistoryText => string.Join("\n\n", history);
         public string CurrentObjective => objectiveLabel != null ? objectiveLabel.text : string.Empty;
         public string CurrentMessage => requestedMessage;
-        public string CurrentChapter => chapterLabel != null ? chapterLabel.text : string.Empty;
+        public string CurrentChapter { get; private set; } = string.Empty;
         public string CurrentTerminalOutput => outputLabel != null ? outputLabel.text : string.Empty;
-        public string OriginalTerminalExplanation => terminalExplanationOriginal;
         public string PrimaryActionLabel => primaryLabel != null ? primaryLabel.text : string.Empty;
-        public InputField CommandInput => commandInput;
         public RectTransform Root => root;
         public RectTransform UiRoot => root;
-        public RectTransform PhoneRoot => phone;
-        public ScrollRect ChatScroll => chatScroll;
-        public bool IsFollowingLatest => !reviewingHistory;
-        public Color CommandTextColor => commandInput != null ? commandInput.textComponent.color : Cyan;
+        public Color CommandTextColor => commandLabel != null ? commandLabel.color : Cyan;
         public Color OutputTextColor => outputLabel != null ? outputLabel.color : Green;
         public AudioSource ReceivedMessageAudioSource => notificationSource;
         public AudioClip ReceivedMessageAudioClip => notificationClip;
@@ -77,33 +72,31 @@ namespace AndesSim
         static readonly Color Green = new Color(.66f, 1f, .71f, 1f);
         static readonly Color Coral = new Color(1f, .64f, .53f, 1f);
         const float DeliveryDelay = 1.2f;
-        readonly Queue<string> incoming = new Queue<string>();
+        readonly Queue<(string text, bool authorizesQuery)> incoming = new Queue<(string, bool)>();
         readonly List<string> history = new List<string>();
         readonly List<Button> buttons = new List<Button>();
         readonly Dictionary<Button, bool> desiredEnabled = new Dictionary<Button, bool>();
         readonly HashSet<Button> waitsForMentor = new HashSet<Button>();
         Canvas canvas;
         Camera uiCamera;
-        Font font, commandFont;
-        RectTransform root, phone, screen, terminalPanel, chatContent, chatViewport, outputContent, outputScroll, progressFill;
-        ScrollRect chatScroll;
-        Text statusLabel, chapterLabel, objectiveLabel, stepLabel, worldHint, typingLabel, primaryLabel, secondaryLabel, terminalContinueLabel, outputLabel, terminalTitle;
-        Button primaryButton, secondaryButton, terminalContinueButton, latestButton, confirmButton, cancelButton;
-        InputField commandInput;
+        Font font;
+        RectTransform root, safe, dialogue, objectives, terminalPanel, outputContent, dialogueContent, historyContent, historyPanel, restartPanel;
+        ScrollRect dialogueScroll, outputScroll, historyScroll;
+        Text statusLabel, objectiveHeading, objectiveLabel, evidenceLabel, typingLabel, primaryLabel, secondaryLabel;
+        Text dialogueBody, outputLabel, commandLabel, terminalState;
+        Button primaryButton, secondaryButton, confirmButton, cancelButton, executeButton;
         Action primaryAction, secondaryAction;
-        Action<string> runCommand;
+        Action runCommand;
+        bool executeAuthorized;
         AudioSource notificationSource;
         AudioClip notificationClip;
         Coroutine delivery;
-        string requestedMessage = string.Empty, exampleCommand = string.Empty, terminalExplanationOriginal = string.Empty;
+        string requestedMessage = string.Empty;
         string primaryCaption = string.Empty, secondaryCaption = string.Empty;
         bool modal, built, confirmingRestart;
-        bool followChat = true;
-        float followChatPosition;
-        int scrollAfterLayoutFrames;
-        bool reviewingHistory, trackingHistoryDrag;
-        Vector2 historyDragStart;
-        float lastRunTime = -1, writingBegan;
+        bool resetDialogueScroll, resetHistoryScroll;
+        int historyRows;
+        float writingBegan;
         int lastActionFrame = -1;
 
         void Awake() => EnsureBuilt();
@@ -113,10 +106,10 @@ namespace AndesSim
         {
             EnsureBuilt();
             this.modal = modal;
-            chapterLabel.text = chapter ?? string.Empty;
-            objectiveLabel.text = objective ?? string.Empty;
-            stepLabel.text = $"OBJETIVO {Mathf.Clamp(currentStep, 1, Mathf.Max(1, totalSteps)):00} / {Mathf.Max(1, totalSteps):00}";
-            progressFill.anchorMax = new Vector2(totalSteps > 0 ? Mathf.Clamp01((float)currentStep / totalSteps) : 0, 1);
+            CurrentChapter = chapter ?? string.Empty;
+            bool complete = totalSteps > 0 && currentStep == totalSteps;
+            objectiveHeading.text = complete ? "CASO CERRADO" : "OBJETIVO ACTUAL";
+            objectiveLabel.text = complete ? "Entrenamiento completado" : objective ?? string.Empty;
             SetMessage(message);
             SetActions(actionLabel, action);
         }
@@ -124,9 +117,18 @@ namespace AndesSim
         public void SetMessage(string message)
         {
             EnsureBuilt();
-            requestedMessage = message ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(requestedMessage)) return;
-            incoming.Enqueue(requestedMessage);
+            if (string.IsNullOrWhiteSpace(message)) return;
+            // Blank lines separate authored sections. Single line breaks stay inside a section.
+            foreach (var section in message.Split(new[] { "\n\n" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!string.IsNullOrWhiteSpace(section)) EnqueueSection(section.Trim());
+            }
+        }
+
+        void EnqueueSection(string text, bool authorizesQuery = false)
+        {
+            requestedMessage = text;
+            incoming.Enqueue((text, authorizesQuery));
             if (delivery == null && !AwaitingNextMessage) delivery = StartCoroutine(DeliverMessages());
             RefreshActions();
         }
@@ -136,6 +138,8 @@ namespace AndesSim
             if (delivery != null) StopCoroutine(delivery);
             delivery = null;
             incoming.Clear();
+            executeAuthorized = false;
+            runCommand = null;
             IsMentorTyping = false;
             AwaitingNextMessage = false;
             if (built) { LayoutActions(); RefreshActions(); }
@@ -162,10 +166,15 @@ namespace AndesSim
             statusLabel.text = (message ?? string.Empty).Replace(" | ", "  ·  ");
         }
 
-        public void SetWorldHint(string message)
+        public void SetPendingEvidence(IReadOnlyList<string> titles)
         {
             EnsureBuilt();
-            worldHint.text = message ?? string.Empty;
+            bool hasEvidence = titles != null && titles.Count > 0;
+            evidenceLabel.gameObject.SetActive(hasEvidence);
+            evidenceLabel.text = hasEvidence ? "• " + string.Join("\n• ", titles) : string.Empty;
+            float offset = hasEvidence ? titles.Count * 24 : 0;
+            objectives.sizeDelta = new Vector2(objectives.sizeDelta.x, 137 + offset);
+            statusLabel.rectTransform.anchoredPosition = new Vector2(16, -91 - offset);
         }
 
         public void SetActions(string primaryLabel, Action primary, string secondaryLabel = null, Action secondary = null)
@@ -175,24 +184,24 @@ namespace AndesSim
             secondaryCaption = secondaryLabel ?? string.Empty;
             primaryAction = primary;
             secondaryAction = secondary;
-            desiredEnabled[primaryButton] = desiredEnabled[terminalContinueButton] = primary != null;
+            desiredEnabled[primaryButton] = primary != null;
             desiredEnabled[secondaryButton] = secondary != null;
             LayoutActions();
             RefreshActions();
         }
 
-        public void SetTerminal(string title, string explanation, string commandExample, Action<string> onRun)
+        public void SetTerminal(string command, string instruction, Action execute)
         {
             EnsureBuilt();
-            terminalTitle.text = title ?? "TERMINAL ANDES / LABORATORIO";
-            terminalExplanationOriginal = explanation ?? string.Empty;
-            exampleCommand = commandExample ?? string.Empty;
-            commandInput.text = exampleCommand;
-            runCommand = onRun;
-            SetTerminalOutput("ANDES LAB / SESSION CONNECTED\nstatus: READY\nresult: —", true);
+            commandLabel.text = "$ " + command;
+            terminalState.text = "ESPERANDO A ELLIOT";
+            outputLabel.text = string.Empty;
+            outputLabel.color = Green;
+            ScrollToStart(outputScroll);
+            executeAuthorized = false;
+            runCommand = execute;
             terminalPanel.gameObject.SetActive(true);
-            if (!string.IsNullOrWhiteSpace(terminalExplanationOriginal)) SetMessage(terminalExplanationOriginal);
-            LayoutActions();
+            EnqueueSection(instruction, authorizesQuery: true);
         }
 
         public void SetTerminalOutput(string output, bool success)
@@ -200,25 +209,20 @@ namespace AndesSim
             EnsureBuilt();
             outputLabel.text = output ?? string.Empty;
             outputLabel.color = success ? Green : Coral;
+            terminalState.text = success ? "RESULTADO DISPONIBLE" : "ERROR DE CONSULTA";
             Canvas.ForceUpdateCanvases();
-            outputContent.sizeDelta = new Vector2(0, Mathf.Max(outputScroll.rect.height - 12, outputLabel.preferredHeight + 12));
-            outputContent.anchoredPosition = Vector2.zero;
-            outputScroll.GetComponent<ScrollRect>().verticalNormalizedPosition = 1;
-        }
-
-        public void SetTerminalVisible(bool visible)
-        {
-            EnsureBuilt();
-            terminalPanel.gameObject.SetActive(visible);
-            if (!visible) ReleaseCommandFocus();
-            LayoutActions();
+            ResizeScroll(outputScroll, outputContent, outputLabel);
+            ScrollToStart(outputScroll);
         }
 
         public void CloseTerminal()
         {
             if (!IsTerminalOpen) return;
-            SetTerminalVisible(false);
-            TerminalClosed?.Invoke();
+            executeAuthorized = false;
+            runCommand = null;
+            terminalPanel.gameObject.SetActive(false);
+            ClearUISelection();
+            RefreshActions();
         }
 
         IEnumerator DeliverMessages()
@@ -226,9 +230,10 @@ namespace AndesSim
             // Deliver one instruction. A queued instruction requires an explicit
             // acknowledgement, so it cannot replace the one the player is reading.
             if (incoming.Count == 0) yield break;
-            string message = incoming.Dequeue();
+            var (message, authorizesQuery) = incoming.Dequeue();
             IsMentorTyping = true;
             writingBegan = Time.unscaledTime;
+            LayoutActions();
             RefreshActions();
             while (MobileExperience.IsPaused || Time.unscaledTime - writingBegan < DeliveryDelay)
             {
@@ -238,6 +243,8 @@ namespace AndesSim
             LastDeliveredMessage = message;
             ReceivedMessageCount++;
             AppendBubble(message, false, false);
+            dialogueBody.text = message;
+            resetDialogueScroll = true;
             if (notificationSource != null && notificationClip != null)
             {
                 notificationSource.PlayOneShot(notificationClip);
@@ -246,6 +253,11 @@ namespace AndesSim
             IsMentorTyping = false;
             AwaitingNextMessage = incoming.Count > 0;
             delivery = null;
+            if (authorizesQuery && IsTerminalOpen && runCommand != null)
+            {
+                executeAuthorized = true;
+                terminalState.text = "LISTA PARA EJECUTAR";
+            }
             LayoutActions();
             RefreshActions();
         }
@@ -265,22 +277,20 @@ namespace AndesSim
         void Update()
         {
             if (!built) return;
-            DetectHistoryGesture();
+
             typingLabel.text = IsMentorTyping
                 ? "Elliot está escribiendo" + new string('.', 1 + Mathf.FloorToInt((Time.unscaledTime - writingBegan) * 6) % 3)
-                : AwaitingNextMessage ? "Pulsa Siguiente para recibir la otra indicación"
-                : "Mensajes locales · historial de la sesión";
+                : string.Empty;
             typingLabel.color = IsMentorTyping ? Mint : Muted;
             RefreshActions();
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
             if (keyboard.escapeKey.wasPressedThisFrame)
             {
-                if (confirmingRestart) CancelRestart();
-                else if (IsTerminalOpen) CloseTerminal();
+                if (IsHistoryOpen) CloseHistory();
+                else if (confirmingRestart) CancelRestart();
             }
-            if (IsTerminalOpen && IsTyping && (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame)) RunCommand();
-            else if (!IsTyping && keyboard.spaceKey.wasPressedThisFrame)
+            if (MobileExperience.Instance == null && !IsTerminalOpen && keyboard.spaceKey.wasPressedThisFrame)
             {
                 Button button = ButtonAt(new Vector2(Screen.width * .5f, Screen.height * .5f));
                 if (button != null) button.onClick.Invoke();
@@ -289,150 +299,100 @@ namespace AndesSim
 
         void LateUpdate()
         {
-            if (!built) return;
+            if (!built || !root.gameObject.activeInHierarchy) return;
             if (canvas.renderMode == RenderMode.WorldSpace && uiCamera == null)
             {
                 uiCamera = Camera.main;
                 AttachWorldCanvas();
             }
-            if (followChat && chatScroll != null)
+            if (canvas.renderMode == RenderMode.ScreenSpaceOverlay) MobileExperience.FitSafeArea(safe);
+
+            dialogue.gameObject.SetActive(!IsHistoryOpen);
+            objectives.gameObject.SetActive(!IsHistoryOpen);
+            if (dialogue.gameObject.activeSelf)
             {
-                // Scroll after all row sizes are settled, and repeat on the next
-                // frame so ScrollRect cannot restore an older layout position.
+                ResizeScroll(dialogueScroll, dialogueContent, dialogueBody);
+                if (resetDialogueScroll) ScrollToStart(dialogueScroll);
+                resetDialogueScroll = false;
+            }
+            if (IsTerminalOpen) ResizeScroll(outputScroll, outputContent, outputLabel);
+            if (!IsHistoryOpen) return;
+            if (resetHistoryScroll)
+            {
                 Canvas.ForceUpdateCanvases();
-                LayoutRebuilder.ForceRebuildLayoutImmediate(chatContent);
-                ScrollToLatestRow();
-                if (--scrollAfterLayoutFrames <= 0) followChat = false;
+                LayoutRebuilder.ForceRebuildLayoutImmediate(historyContent);
+                historyScroll.StopMovement();
+                historyScroll.verticalNormalizedPosition = 0;
+                resetHistoryScroll = false;
             }
         }
 
         void AppendBubble(string message, bool player, bool system)
         {
             history.Add((system ? "SISTEMA" : player ? "TÚ" : MentorDisplayName) + ": " + message);
-            float rowWidth = Mathf.Max(300, chatViewport.rect.width - 8);
-            float bubbleWidth = system ? rowWidth : rowWidth - (player ? 22 : 10);
-            float textWidth = bubbleWidth - 22;
-            int fontSize = system ? 12 : 16;
-            var row = new GameObject("ChatMessage_" + history.Count.ToString("0000"), typeof(RectTransform), typeof(LayoutElement));
-            row.transform.SetParent(chatContent, false);
-            var rowLayout = row.GetComponent<LayoutElement>();
-            rowLayout.preferredHeight = system ? 35 : 59;
-            var bubble = Box(row.transform, system ? "SessionNotice" : player ? "PlayerBubble" : "MentorBubble",
-                system ? new Color(.10f, .14f, .17f) : player ? new Color(.065f, .24f, .34f) : new Color(.075f, .14f, .17f));
-            bubble.anchorMin = bubble.anchorMax = player ? Vector2.one : new Vector2(0, 1);
-            bubble.pivot = player ? Vector2.one : new Vector2(0, 1);
-            bubble.anchoredPosition = Vector2.zero;
-            bubble.sizeDelta = new Vector2(bubbleWidth, rowLayout.preferredHeight);
-            if (!system)
-                Label(bubble, player ? "TÚ / INGENIERO EN ENTRENAMIENTO" : "ELLIOT ALDERSON", 11, 9, textWidth, 15, 10, player ? Cyan : Mint, FontStyle.Bold);
-            float bodyTop = system ? 8 : 30;
-            var body = Label(bubble, message, 11, bodyTop, textWidth, 1, fontSize, system ? Muted : White);
-            body.name = "ChatMessageBody";
-            body.verticalOverflow = VerticalWrapMode.Overflow;
-            // Text.preferredHeight uses the actual Canvas scale, pixel-adjusted
-            // width and font settings that render this label. Measuring a separate
-            // TextGenerator can omit a wrapped line at non-integer canvas scales.
-            Canvas.ForceUpdateCanvases();
-            float bodyHeight = Mathf.Ceil(body.preferredHeight) + 6;
-            body.rectTransform.sizeDelta = new Vector2(textWidth, bodyHeight);
-            float height = Mathf.Max(system ? 35 : 59, bodyTop + bodyHeight + 10);
-            rowLayout.preferredHeight = height;
-            bubble.sizeDelta = new Vector2(bubbleWidth, height);
-            Canvas.ForceUpdateCanvases();
-            LayoutRebuilder.ForceRebuildLayoutImmediate(chatContent);
-            // Every new message takes focus, even after the player browsed history.
-            // Previously delivered messages remain available by scrolling up.
-            reviewingHistory = false;
-            trackingHistoryDrag = false;
-            chatScroll.StopMovement();
-            ScrollToLatestRow();
-            scrollAfterLayoutFrames = 2;
-            followChat = true;
         }
 
-        void JumpToLatest()
+        public void SetHistoryVisible(bool visible)
         {
-            reviewingHistory = false;
-            trackingHistoryDrag = false;
-            Canvas.ForceUpdateCanvases();
-            ScrollToLatestRow();
-            scrollAfterLayoutFrames = 2;
-            followChat = true;
-        }
-
-        void ScrollToLatestRow()
-        {
-            var last = chatContent.childCount > 0 ? chatContent.GetChild(chatContent.childCount - 1) as RectTransform : null;
-            if (last != null && last.rect.height > chatViewport.rect.height)
+            EnsureBuilt();
+            historyPanel.gameObject.SetActive(visible);
+            dialogue.gameObject.SetActive(!visible);
+            objectives.gameObject.SetActive(!visible);
+            if (!visible) return;
+            historyPanel.SetAsLastSibling();
+            for (; historyRows < history.Count; historyRows++)
             {
-                float top = -last.anchoredPosition.y - last.rect.height * (1 - last.pivot.y);
-                float scrollable = Mathf.Max(1, chatContent.rect.height - chatViewport.rect.height);
-                followChatPosition = Mathf.Clamp01(1 - Mathf.Max(0, top) / scrollable);
+                var row = Label(historyContent, history[historyRows], 0, 0, 100, 30, 21, White);
+                row.verticalOverflow = VerticalWrapMode.Overflow;
             }
-            else followChatPosition = 0;
-            chatScroll.verticalNormalizedPosition = followChatPosition;
-            chatScroll.velocity = Vector2.zero;
+            resetHistoryScroll = true;
         }
 
-        void DetectHistoryGesture()
+        void CloseHistory()
         {
-            var mouse = Mouse.current;
-            if (mouse == null || chatScroll == null) return;
-            Vector2 pointer = mouse.position.ReadValue();
-            bool overHistory = Contains(chatScroll.transform as RectTransform, pointer);
-            bool scroll = overHistory && mouse.scroll.ReadValue().sqrMagnitude > .01f;
-            if (mouse.leftButton.wasPressedThisFrame)
-            {
-                trackingHistoryDrag = overHistory;
-                historyDragStart = pointer;
-                if (overHistory && chatScroll.verticalScrollbar != null &&
-                    Contains(chatScroll.verticalScrollbar.transform as RectTransform, pointer)) scroll = true;
-            }
-            if (trackingHistoryDrag && mouse.leftButton.isPressed && Vector2.Distance(pointer, historyDragStart) > 3) scroll = true;
-            if (mouse.leftButton.wasReleasedThisFrame) trackingHistoryDrag = false;
-            if (!scroll) return;
-            // A generated scroll position is never interpreted as a user gesture.
-            // In particular, aligning a long message to its first line must keep
-            // subsequent incoming messages following the active conversation.
-            reviewingHistory = true;
-            followChat = false;
+            SetHistoryVisible(false);
+            HistoryClosed?.Invoke();
         }
 
         void RunCommand()
         {
-            if (!IsTerminalOpen || !IsReadyForAction || runCommand == null || Time.unscaledTime - lastRunTime < .18f) return;
-            lastRunTime = Time.unscaledTime;
-            runCommand(commandInput.text);
+            if (!CanExecuteQuery) return;
+            Action execute = runCommand;
+            runCommand = null;
+            executeAuthorized = false;
+            RefreshActions();
+            execute();
         }
 
-        void RequestRestart()
+        public void RequestRestart()
         {
             if (confirmingRestart) return;
-            ReleaseCommandFocus();
+            ClearUISelection();
             confirmingRestart = true;
-            AddSystemMessage("¿Comenzar un entrenamiento nuevo? Se reiniciarán los objetivos, controles, alarma y resultados. Este historial de conversación seguirá disponible.");
-            JumpToLatest();
+            restartPanel.SetAsLastSibling();
+            restartPanel.gameObject.SetActive(true);
             LayoutActions();
         }
 
         void CancelRestart()
         {
             confirmingRestart = false;
-            AddSystemMessage("Continúas en el entrenamiento actual.");
+            restartPanel.gameObject.SetActive(false);
             LayoutActions();
         }
 
         void ConfirmRestart()
         {
             confirmingRestart = false;
-            SetTerminalVisible(false);
+            restartPanel.gameObject.SetActive(false);
+            dialogueBody.text = string.Empty;
+            CloseTerminal();
             RestartRequested?.Invoke();
             LayoutActions();
         }
 
-        void ReleaseCommandFocus()
+        public void ClearUISelection()
         {
-            commandInput?.DeactivateInputField();
             if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
         }
 
@@ -441,7 +401,6 @@ namespace AndesSim
             if (built) return;
             built = true;
             font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            commandFont = font;
             uiCamera = Camera.main;
             var item = new GameObject("Mentor_Training_HUD", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             item.transform.SetParent(transform, false);
@@ -450,7 +409,7 @@ namespace AndesSim
             canvas.sortingOrder = 400;
             canvas.worldCamera = uiCamera;
             var scaler = item.GetComponent<CanvasScaler>();
-            if (XRSettings.isDeviceActive && !Application.isEditor)
+            if (MobileExperience.Instance == null && XRSettings.isDeviceActive && !Application.isEditor)
             {
                 canvas.renderMode = RenderMode.WorldSpace;
                 root.sizeDelta = new Vector2(1280, 720);
@@ -469,10 +428,10 @@ namespace AndesSim
                 events.transform.SetParent(transform, false);
                 events.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
             }
-            var brand = Box(root, "TrainingBrand", Background);
-            Place(brand, 24, 20, 810, 50);
-            Label(brand, "ANDES-SIM / CENTRO DE DATOS", 16, 14, 778, 25, 20, Mint, FontStyle.Bold);
-            BuildPhone();
+            safe = Box(root, "SafeArea", Color.clear);
+            Stretch(safe);
+            if (canvas.renderMode == RenderMode.ScreenSpaceOverlay) MobileExperience.FitSafeArea(safe);
+            BuildDialogue();
             BuildTerminal();
             BuildNotification();
             terminalPanel.gameObject.SetActive(false);
@@ -480,106 +439,163 @@ namespace AndesSim
             RefreshActions();
         }
 
-        void BuildPhone()
+        void BuildDialogue()
         {
-            phone = Box(root, "MentorPhone", new Color(.004f, .009f, .015f));
-            phone.anchorMin = phone.anchorMax = Vector2.one;
-            phone.pivot = Vector2.one;
-            phone.anchoredPosition = new Vector2(-20, -20);
-            phone.sizeDelta = new Vector2(395, 680);
-            var outline = phone.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(.18f, .29f, .34f);
-            outline.effectDistance = new Vector2(2, -2);
-            screen = Box(phone, "PhoneScreen", Background);
-            Place(screen, 8, 8, 379, 664);
-            Label(screen, "ANDES-SIM  /  CHAT LOCAL", 18, 12, 242, 18, 10, Muted, FontStyle.Bold);
-            var restart = MakeButton(screen, "RestartTraining", "Reiniciar", RequestRestart, false, false);
-            Place(restart.transform as RectTransform, 284, 8, 79, 25);
-            Label(screen, MentorDisplayName, 18, 33, 343, 25, 20, White, FontStyle.Bold);
-            Label(screen, "● Conectado · Ingeniero senior de ciberseguridad", 18, 61, 343, 15, 10, Mint);
-            statusLabel = Label(screen, "", 18, 81, 343, 26, 10, Muted);
-            statusLabel.resizeTextForBestFit = true; statusLabel.resizeTextMinSize = 9; statusLabel.resizeTextMaxSize = 10;
-            chapterLabel = Label(screen, "", 18, 112, 241, 15, 10, Mint, FontStyle.Bold);
-            chapterLabel.resizeTextForBestFit = true; chapterLabel.resizeTextMinSize = 9; chapterLabel.resizeTextMaxSize = 10;
-            objectiveLabel = Label(screen, "", 18, 134, 343, 43, 16, White, FontStyle.Bold);
-            objectiveLabel.resizeTextForBestFit = true; objectiveLabel.resizeTextMinSize = 13; objectiveLabel.resizeTextMaxSize = 16;
-            worldHint = Label(screen, "", 18, 183, 343, 24, 10, Cyan);
-            worldHint.resizeTextForBestFit = true; worldHint.resizeTextMinSize = 9; worldHint.resizeTextMaxSize = 10;
-            stepLabel = Label(screen, "", 265, 112, 96, 15, 9, Muted, FontStyle.Bold);
-            var track = Box(screen, "ProgressTrack", new Color(.12f, .21f, .26f));
-            Place(track, 18, 212, 343, 3);
-            progressFill = Box(track, "ProgressFill", Mint);
-            progressFill.anchorMin = Vector2.zero; progressFill.anchorMax = new Vector2(0, 1);
-            progressFill.offsetMin = progressFill.offsetMax = Vector2.zero;
-            var scroll = CreateScroll(screen, "ChatHistory", out chatViewport, out chatContent, true);
-            Place(scroll, 14, 223, 351, 291);
-            chatScroll = scroll.GetComponent<ScrollRect>();
-            var layout = chatContent.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(2, 2, 5, 5);
-            layout.spacing = 9;
-            layout.childControlWidth = true;
-            layout.childForceExpandWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandHeight = false;
-            var fitter = chatContent.gameObject.AddComponent<ContentSizeFitter>();
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            typingLabel = Label(screen, "", 18, 522, 225, 19, 11, Muted);
-            latestButton = MakeButton(screen, "LatestMessages", "Ver últimos ↓", JumpToLatest, false, false);
-            Place(latestButton.transform as RectTransform, 250, 519, 111, 24);
-            primaryButton = MakeButton(screen, "PrimaryAction", "", InvokePrimaryAction, true);
+            objectives = Box(safe, "Objectives", Background);
+            Place(objectives, 18, 14, 485, 137);
+            objectiveHeading = Label(objectives, "OBJETIVO ACTUAL", 16, 11, 445, 22, 14, Mint, FontStyle.Bold);
+            objectiveLabel = Label(objectives, "", 16, 37, 451, 53, 21, White, FontStyle.Bold);
+            evidenceLabel = Label(objectives, "", 16, 91, 451, 76, 18, White);
+            evidenceLabel.name = "PendingEvidence";
+            statusLabel = Label(objectives, "", 16, 91, 451, 38, 14, Muted);
+
+            dialogue = Box(safe, "MentorDialogue", Background);
+            dialogue.anchorMin = Vector2.zero;
+            dialogue.anchorMax = Vector2.right;
+            dialogue.offsetMin = new Vector2(18, 14);
+            dialogue.offsetMax = new Vector2(-18, 210);
+
+            var portrait = new GameObject("ElliotPortrait", typeof(RectTransform), typeof(DialoguePortrait)).GetComponent<RectTransform>();
+            portrait.SetParent(dialogue, false);
+            Place(portrait, 18, 24, 94, 94);
+            var photo = portrait.GetComponent<DialoguePortrait>();
+            photo.texture = Resources.Load<Texture2D>("ElliotPortrait");
+            photo.raycastTarget = false;
+            photo.color = photo.texture != null ? Color.white : Surface;
+
+            var name = Label(dialogue, MentorDisplayName, 132, 17, 350, 30, 24, Mint, FontStyle.Bold);
+            name.name = "DialogueSpeaker";
+            var spoken = CreateScroll(dialogue, "CurrentDialogue", out _, out dialogueContent, false);
+            Stretch(spoken);
+            spoken.offsetMin = new Vector2(124, 34);
+            spoken.offsetMax = new Vector2(-326, -51);
+            dialogueScroll = spoken.GetComponent<ScrollRect>();
+            dialogueBody = ScrollBody(dialogueContent, "DialogueBody", 20, White);
+            typingLabel = Label(dialogue, "", 132, 170, 400, 21, 15, Mint);
+
+            var actions = Box(dialogue, "DialogueActions", Surface);
+            actions.anchorMin = new Vector2(1, 0);
+            actions.anchorMax = Vector2.one;
+            actions.offsetMin = new Vector2(-306, 10);
+            actions.offsetMax = new Vector2(-10, -10);
+            primaryButton = MakeButton(actions, "PrimaryAction", "", InvokePrimaryAction, true);
             primaryLabel = primaryButton.GetComponentInChildren<Text>();
-            terminalContinueButton = MakeButton(screen, "TerminalContinue", "", InvokePrimaryAction, true);
-            terminalContinueLabel = terminalContinueButton.GetComponentInChildren<Text>();
-            secondaryButton = MakeButton(screen, "SecondaryAction", "", () => secondaryAction?.Invoke(), false);
+            secondaryButton = MakeButton(actions, "SecondaryAction", "", () => secondaryAction?.Invoke(), false);
             secondaryLabel = secondaryButton.GetComponentInChildren<Text>();
-            var help = MakeButton(screen, "SeniorHelp", "Guíame", () => HelpRequested?.Invoke(), false);
-            Place(help.transform as RectTransform, 18, 614, 166, 32);
-            var repeat = MakeButton(screen, "SeniorRepeat", "Repetir", () => RepeatRequested?.Invoke(), false);
-            Place(repeat.transform as RectTransform, 195, 614, 166, 32);
-            confirmButton = MakeButton(screen, "ConfirmRestart", "Sí, reiniciar", ConfirmRestart, true, false);
-            cancelButton = MakeButton(screen, "CancelRestart", "Continuar sesión", CancelRestart, false, false);
-            Place(confirmButton.transform as RectTransform, 18, 550, 166, 52);
-            Place(cancelButton.transform as RectTransform, 195, 550, 166, 52);
-            var home = Box(phone, "HomeIndicator", Muted);
-            Place(home, 151, 674, 93, 2);
+            Place(secondaryButton.transform as RectTransform, 10, 94, 276, 52);
+
+            restartPanel = Box(safe, "ConfirmRestartPanel", Background);
+            Center(restartPanel, 580, 215);
+            Label(restartPanel, "¿Reiniciar entrenamiento?", 22, 20, 536, 37, 24, White, FontStyle.Bold);
+            Label(restartPanel, "Se reiniciarán los objetivos, las evidencias y las defensas. Podrás consultar el historial de esta sesión.",
+                22, 67, 536, 61, 19, Muted);
+            confirmButton = MakeButton(restartPanel, "ConfirmRestart", "Sí, reiniciar", ConfirmRestart, true, false);
+            cancelButton = MakeButton(restartPanel, "CancelRestart", "Continuar sesión", CancelRestart, false, false);
+            Place(confirmButton.transform as RectTransform, 22, 143, 254, 51);
+            Place(cancelButton.transform as RectTransform, 305, 143, 254, 51);
+            restartPanel.gameObject.SetActive(false);
+
+            historyPanel = Box(safe, "SessionHistory", Background);
+            Stretch(historyPanel);
+            Label(historyPanel, "Historial de la sesión", 24, 24, 500, 40, 28, White, FontStyle.Bold);
+            var back = MakeButton(historyPanel, "CloseHistory", "Volver al menú", CloseHistory, false, false);
+            var backRect = back.transform as RectTransform;
+            Place(backRect, -204, 17, 180, 48);
+            backRect.anchorMin = backRect.anchorMax = Vector2.one;
+            var historyRegion = CreateScroll(historyPanel, "HistoryScroll", out _, out historyContent, true);
+            Stretch(historyRegion);
+            historyRegion.offsetMin = new Vector2(24, 24);
+            historyRegion.offsetMax = new Vector2(-24, -76);
+            historyScroll = historyRegion.GetComponent<ScrollRect>();
+            var historyLayout = historyContent.gameObject.AddComponent<VerticalLayoutGroup>();
+            historyLayout.padding = new RectOffset(12, 12, 12, 12);
+            historyLayout.spacing = 16;
+            historyLayout.childControlWidth = historyLayout.childControlHeight = true;
+            historyLayout.childForceExpandWidth = true;
+            historyLayout.childForceExpandHeight = false;
+            historyContent.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            historyPanel.gameObject.SetActive(false);
+        }
+
+        Text ScrollBody(RectTransform content, string name, int size, Color color)
+        {
+            var label = Label(content, "", 0, 0, 100, 100, size, color);
+            label.name = name;
+            label.verticalOverflow = VerticalWrapMode.Overflow;
+            Stretch(label.rectTransform, 8, 4);
+            return label;
+        }
+
+        static void ResizeScroll(ScrollRect scroll, RectTransform content, Text label)
+        {
+            float height = Mathf.Max(scroll.viewport.rect.height, label.preferredHeight + 12);
+            if (!Mathf.Approximately(content.sizeDelta.y, height)) content.sizeDelta = new Vector2(0, height);
+        }
+
+        static void ScrollToStart(ScrollRect scroll)
+        {
+            scroll.StopMovement();
+            scroll.content.anchoredPosition = Vector2.zero;
+            scroll.verticalNormalizedPosition = 1;
+        }
+
+        static void Center(RectTransform rect, float width, float height)
+        {
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(width, height);
         }
 
         void BuildTerminal()
         {
-            terminalPanel = Box(root, "GuidedTerminal", Background);
-            Place(terminalPanel, 24, 88, 810, 600);
-            terminalTitle = Label(terminalPanel, "TERMINAL ANDES / LABORATORIO", 22, 18, 766, 50, 22, Mint, FontStyle.Bold);
-            Label(terminalPanel, "COMANDO SIMULADO", 22, 80, 766, 22, 12, Cyan, FontStyle.Bold);
-            var field = Box(terminalPanel, "CommandInput", new Color(.009f, .022f, .036f));
-            Place(field, 22, 110, 766, 58);
-            field.GetComponent<Image>().raycastTarget = true;
-            commandInput = field.gameObject.AddComponent<InputField>();
-            var text = Label(field, "", 13, 14, 740, 32, 18, Cyan);
-            text.font = commandFont;
-            commandInput.textComponent = text;
-            commandInput.lineType = InputField.LineType.SingleLine;
-            commandInput.characterLimit = 180;
-            commandInput.customCaretColor = true;
-            commandInput.caretColor = Cyan;
-            commandInput.selectionColor = new Color(.10f, .36f, .48f, .8f);
-            var run = MakeButton(terminalPanel, "ExecuteCommand", "Ejecutar", RunCommand, true);
-            Place(run.transform as RectTransform, 564, 183, 224, 43);
-            var example = MakeButton(terminalPanel, "UseCommandExample", "Usar ejemplo", () => { commandInput.text = exampleCommand; commandInput.ActivateInputField(); }, false, false);
-            Place(example.transform as RectTransform, 22, 183, 230, 43);
-            Label(terminalPanel, "SALIDA / DATOS DEL ESCENARIO", 22, 247, 766, 23, 12, Green, FontStyle.Bold);
-            outputScroll = CreateScroll(terminalPanel, "CommandOutput", out _, out outputContent, false);
-            Place(outputScroll, 22, 280, 766, 230);
-            outputLabel = Label(outputContent, "", 0, 0, 100, 100, 17, Green);
-            outputLabel.name = "OutputLabel";
-            outputLabel.font = commandFont;
-            outputLabel.supportRichText = false;
-            outputLabel.verticalOverflow = VerticalWrapMode.Overflow;
-            Stretch(outputLabel.rectTransform);
-            var back = MakeButton(terminalPanel, "CloseTerminal", "Volver a la sala", CloseTerminal, false, false);
-            Place(back.transform as RectTransform, 22, 533, 230, 43);
-            var help = MakeButton(terminalPanel, "TerminalHelp", "Consultar al senior →", () => HelpRequested?.Invoke(), false);
-            Place(help.transform as RectTransform, 269, 533, 260, 43);
-            Label(terminalPanel, "DATOS FICTICIOS\nEjecución local", 565, 537, 223, 39, 12, Muted);
+            Font mono = Resources.Load<Font>("RobotoMono-Regular");
+            terminalPanel = Box(safe, "GuidedTerminal", new Color(.16f, .22f, .27f));
+            terminalPanel.anchorMin = new Vector2(.07f, 0);
+            terminalPanel.anchorMax = new Vector2(.93f, 1);
+            terminalPanel.offsetMin = new Vector2(0, 223);
+            terminalPanel.offsetMax = new Vector2(0, -160);
+
+            var bezel = Box(terminalPanel, "MonitorBezel", new Color(.052f, .072f, .092f));
+            Stretch(bezel, 2, 2);
+            var screen = Box(bezel, "MonitorScreen", new Color(.012f, .027f, .044f));
+            Stretch(screen, 12, 10);
+            var header = Box(screen, "MonitorHeader", new Color(.055f, .11f, .15f));
+            header.anchorMin = new Vector2(0, 1);
+            header.anchorMax = Vector2.one;
+            header.offsetMin = new Vector2(0, -35);
+            header.offsetMax = Vector2.zero;
+            var title = Label(header, "TERMINAL ANDES", 15, 8, 280, 22, 16, Mint, FontStyle.Bold);
+            title.font = mono != null ? mono : font;
+
+            terminalState = Label(header, "", 0, 0, 100, 22, 14, White);
+            Stretch(terminalState.rectTransform, 15, 7);
+            terminalState.alignment = TextAnchor.MiddleRight;
+            terminalState.font = title.font;
+
+            var commandArea = Box(screen, "MonitorCommand", new Color(.028f, .065f, .097f));
+            commandArea.anchorMin = new Vector2(0, 1);
+            commandArea.anchorMax = Vector2.one;
+            commandArea.offsetMin = new Vector2(14, -90);
+            commandArea.offsetMax = new Vector2(-14, -49);
+            commandLabel = Label(commandArea, "", 0, 0, 100, 30, 18, Cyan);
+            Stretch(commandLabel.rectTransform, 10, 4);
+            commandLabel.alignment = TextAnchor.MiddleLeft;
+            commandLabel.font = title.font;
+
+            var output = CreateScroll(screen, "CommandOutput", out _, out outputContent, false);
+            Stretch(output);
+            output.offsetMin = new Vector2(14, 62);
+            output.offsetMax = new Vector2(-14, -101);
+            outputScroll = output.GetComponent<ScrollRect>();
+            outputLabel = ScrollBody(outputContent, "OutputLabel", 17, Green);
+            outputLabel.font = title.font;
+
+            executeButton = MakeButton(screen, "ExecuteCommand", "Ejecutar", RunCommand, true);
+            var runRect = executeButton.transform as RectTransform;
+            runRect.anchorMin = runRect.anchorMax = new Vector2(1, 0);
+            runRect.pivot = new Vector2(1, 0);
+            runRect.anchoredPosition = new Vector2(-14, 10);
+            runRect.sizeDelta = new Vector2(162, 43);
         }
 
         void BuildNotification()
@@ -606,20 +622,16 @@ namespace AndesSim
 
         void LayoutActions()
         {
-            if (!built || primaryButton == null || terminalContinueButton == null) return;
-            primaryLabel.text = terminalContinueLabel.text = AwaitingNextMessage ? "Siguiente" : primaryCaption;
+            if (!built || primaryButton == null) return;
+            bool showContinue = !IsMentorTyping && AwaitingNextMessage;
+            bool showActions = IsReadyForAction;
+            bool showSecondary = showActions && !string.IsNullOrWhiteSpace(secondaryCaption);
+            primaryLabel.text = showContinue ? "Continuar" : primaryCaption;
             secondaryLabel.text = secondaryCaption;
-            bool hasPrimary = AwaitingNextMessage || !string.IsNullOrWhiteSpace(primaryCaption);
-            bool hasSecondary = !AwaitingNextMessage && !string.IsNullOrWhiteSpace(secondaryCaption);
-            primaryButton.gameObject.SetActive(!confirmingRestart && !IsTerminalOpen && hasPrimary);
-            terminalContinueButton.gameObject.SetActive(!confirmingRestart && IsTerminalOpen && hasPrimary);
-            secondaryButton.gameObject.SetActive(!confirmingRestart && hasSecondary);
-            float primaryWidth = hasSecondary ? 166 : 343;
-            Place(primaryButton.transform as RectTransform, 18, 550, primaryWidth, 52);
-            Place(terminalContinueButton.transform as RectTransform, 18, 550, primaryWidth, 52);
-            Place(secondaryButton.transform as RectTransform, 195, 550, 166, 52);
-            confirmButton.gameObject.SetActive(confirmingRestart);
-            cancelButton.gameObject.SetActive(confirmingRestart);
+            Place(primaryButton.transform as RectTransform, 10, showSecondary ? 28 : 57, 276, 56);
+            primaryButton.gameObject.SetActive(!confirmingRestart &&
+                (showContinue || showActions && !string.IsNullOrWhiteSpace(primaryCaption)));
+            secondaryButton.gameObject.SetActive(!confirmingRestart && showSecondary);
         }
 
         void RefreshActions()
@@ -627,10 +639,15 @@ namespace AndesSim
             foreach (var pair in desiredEnabled)
             {
                 if (pair.Key == null) continue;
-                pair.Key.interactable = pair.Value && (!waitsForMentor.Contains(pair.Key) || IsReadyForAction) &&
-                    (!confirmingRestart || pair.Key == confirmButton || pair.Key == cancelButton || pair.Key == latestButton);
-                if ((pair.Key == primaryButton || pair.Key == terminalContinueButton) && AwaitingNextMessage)
-                    pair.Key.interactable = !IsMentorTyping && !confirmingRestart;
+                if (pair.Key == executeButton)
+                {
+                    pair.Key.interactable = CanExecuteQuery;
+                    continue;
+                }
+                bool canUse = pair.Key == primaryButton && AwaitingNextMessage
+                    ? !IsMentorTyping
+                    : pair.Value && (!waitsForMentor.Contains(pair.Key) || IsReadyForAction);
+                pair.Key.interactable = canUse && (!confirmingRestart || pair.Key == confirmButton || pair.Key == cancelButton);
             }
         }
 
@@ -661,8 +678,8 @@ namespace AndesSim
             Stretch(text.rectTransform, 8, 3);
             text.alignment = TextAnchor.MiddleCenter;
             text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = 12;
-            text.resizeTextMaxSize = 15;
+            text.resizeTextMinSize = 14;
+            text.resizeTextMaxSize = 19;
             button.onClick.AddListener(() =>
             {
                 if (!button.interactable || lastActionFrame == Time.frameCount) return;
@@ -773,6 +790,25 @@ namespace AndesSim
             CancelPendingMessages();
             if (root != null) Destroy(root.gameObject);
             if (notificationClip != null) Destroy(notificationClip);
+        }
+    }
+
+    // Circular UV mesh keeps the original square artwork reusable.
+    public sealed class DialoguePortrait : RawImage
+    {
+        protected override void OnPopulateMesh(VertexHelper mesh)
+        {
+            mesh.Clear();
+            var rect = GetPixelAdjustedRect();
+            mesh.AddVert(rect.center, color, new Vector2(.5f, .5f));
+            const int segments = 64;
+            for (int segment = 0; segment <= segments; segment++)
+            {
+                float angle = segment * 2 * Mathf.PI / segments;
+                var uv = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * .5f + Vector2.one * .5f;
+                mesh.AddVert(new Vector2(rect.xMin + uv.x * rect.width, rect.yMin + uv.y * rect.height), color, uv);
+                if (segment > 0) mesh.AddTriangle(0, segment, segment + 1);
+            }
         }
     }
 }

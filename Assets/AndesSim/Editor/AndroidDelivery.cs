@@ -41,7 +41,7 @@ namespace AndesSim.Editor
             var game=UnityEngine.Object.FindAnyObjectByType<GameManager>();
             if(game.GetComponent<MobileExperience>()==null) Undo.AddComponent<MobileExperience>(game.gameObject);
             foreach(var sim in UnityEngine.Object.FindObjectsByType<UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator>()) { Undo.RecordObject(sim.gameObject,"Desactivar movimiento libre"); sim.gameObject.SetActive(false); }
-            var explorer=UnityEngine.Object.FindAnyObjectByType<ExplorationController>(); explorer.simulatorInstructions="CÁMARA: joystick o giroscopio\nToca los equipos o usa Inspeccionar.\nNavega por teletransporte o Llévame.";
+            var explorer=UnityEngine.Object.FindAnyObjectByType<ExplorationController>(); explorer.simulatorInstructions="Arrastra sobre la sala o usa el giroscopio para mirar.\nToca los equipos y destinos de teletransporte.";
             EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene);
             PlayerSettings.companyName="AndesSim"; PlayerSettings.productName="ANDES-SIM";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android,"com.andessim.datacenter");
